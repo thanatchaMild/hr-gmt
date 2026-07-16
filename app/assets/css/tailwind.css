@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+/* Shared thin scrollbar for scrollable legal-text panes (PDPA/consent) */
+.styled-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.styled-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+}
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Print specific styles for 8-page preview */
+@media print {
+  @page { margin: 0; }
+  body { margin: 1.6cm; }
+  .no-print { display: none !important; }
+  .page-break { page-break-before: always; }
+}

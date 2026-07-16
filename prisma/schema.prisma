@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  username         String   @unique
+  name             String
+  email            String   @unique
+  passwordHash     String    @map("password_hash")
+  role             String // 'HR_ADMIN' | 'IT_ADMIN'
+  permissionsScope String    @map("permissions_scope") // 'ALL' | 'DAILY_ONLY' | 'MONTHLY_ONLY'
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Employee {
+  id              String    @id @default(cuid())
+  firstName       String    @map("first_name")
+  lastName        String    @map("last_name")
+  email           String
+  phone           String
+  employeeType    String    @map("employee_type") // 'DAILY' | 'MONTHLY'
+  status          String    @default("SUBMITTED") // 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'OFFBOARDED'
+  employeeCode    String?   @map("employee_code")
+  department      String?
+  branch          String?
+  managerName     String?   @map("manager_name")
+  pdpaConsent     Boolean   @default(false) @map("pdpa_consent")
+  pdpaConsentDate DateTime? @map("pdpa_consent_date")
+  formData        String    @db.NVarChar(Max) @map("form_data") // JSON blob of the full onboarding form
+  startDate       DateTime? @map("start_date")
+  probationDate   DateTime? @map("probation_date")
+  contractEndDate DateTime? @map("contract_end_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  documents        Document[]
+  itRequests       ITRequest[]
+  contractRenewals ContractRenewal[]
+
+  @@map("employees")
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  employeeId   String   @map("employee_id")
+  documentType String   @map("document_type")
+  fileUrl      String   @map("file_url")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model ITRequest {
+  id             String   @id @default(cuid())
+  employeeId     String?  @map("employee_id")
+  employeeName   String   @map("employee_name")
+  type           String // 'ONBOARDING' | 'OFFBOARDING'
+  status         String   @default("PENDING") // 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+  requestedItems String   @db.NVarChar(Max) @map("requested_items") // JSON string array
+  requestType    String?  @map("request_type")
+  department     String?
+  approver       String?
+  notes          String?  @db.NVarChar(Max)
+  requestedBy    String?  @map("requested_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@map("it_requests")
+}
+
+model ContractRenewal {
+  id              String    @id @default(cuid())
+  employeeId      String    @map("employee_id")
+  previousEndDate DateTime? @map("previous_end_date")
+  newEndDate      DateTime  @map("new_end_date")
+  note            String?
+  renewedBy       String    @map("renewed_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("contract_renewals")
+}
+
+model AssetCategory {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  status    String   @default("Active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  assets Asset[]
+
+  @@map("asset_categories")
+}
+
+model Asset {
+  id         String   @id @default(cuid())
+  assetTag   String   @unique @map("asset_tag")
+  assetType  String   @map("asset_type")
+  categoryId String?  @map("category_id")
+  status     String   @default("IN_STOCK") // 'IN_STOCK' | 'ASSIGNED' | 'MAINTENANCE'
+  assignedTo String?  @map("assigned_to")
+  department String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  category AssetCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("assets")
+}
