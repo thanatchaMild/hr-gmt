@@ -8,6 +8,7 @@ import StatusBadge from '~/components/admin/StatusBadge.vue'
 import EmptyState from '~/components/admin/EmptyState.vue'
 import Modal from '~/components/admin/Modal.vue'
 import { DEPARTMENTS } from '~/utils/departments'
+import { BRANCHES } from '~/utils/branches'
 
 interface EmployeeRow {
   id: string
@@ -16,6 +17,7 @@ interface EmployeeRow {
   employeeType: 'DAILY' | 'MONTHLY'
   status: string
   department: string | null
+  branch: string | null
   startDate: string | null
   probationDate: string | null
   contractEndDate: string | null
@@ -29,6 +31,7 @@ const employees = computed(() => data.value?.employees || [])
 
 const searchQuery = ref('')
 const filterDepartment = ref('')
+const filterBranch = ref('')
 const filterEmployeeType = ref('')
 const filterProbationDateFrom = ref('')
 const filterProbationDateTo = ref('')
@@ -51,6 +54,9 @@ const filteredEmployees = computed(() => {
       return false
     }
     if (filterDepartment.value && emp.department !== filterDepartment.value) {
+      return false
+    }
+    if (filterBranch.value && emp.branch !== filterBranch.value) {
       return false
     }
     if (filterEmployeeType.value && emp.employeeType !== filterEmployeeType.value) {
@@ -154,6 +160,14 @@ const submitOffboardRequest = async () => {
             <select v-model="filterDepartment" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
               <option value="">ทุกแผนก</option>
               <option v-for="dept in DEPARTMENTS" :key="dept" :value="dept">{{ dept }}</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500">สาขา</label>
+            <select v-model="filterBranch" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+              <option value="">ทุกสาขา</option>
+              <option v-for="branch in BRANCHES" :key="branch" :value="branch">{{ branch }}</option>
             </select>
           </div>
 
