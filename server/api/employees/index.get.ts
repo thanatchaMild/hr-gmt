@@ -3,11 +3,12 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const status = query.status as string | undefined
+  const statuses = status?.split(',').filter(Boolean)
   const employeeType = scopeEmployeeTypeFilter(user) ?? (query.type as string | undefined)
 
   const employees = await prisma.employee.findMany({
     where: {
-      ...(status ? { status } : {}),
+      ...(statuses?.length ? { status: { in: statuses } } : {}),
       ...(employeeType ? { employeeType } : {})
     },
     orderBy: { createdAt: 'desc' },

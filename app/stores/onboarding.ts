@@ -5,6 +5,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   // 1. Employee Type & Access
   const employeeType = ref<'DAILY' | 'MONTHLY' | null>(null)
   const token = ref<string | null>(null)
+  const employeeCode = ref<string | null>(null)
 
   // 2. PDPA Consent
   const pdpaConsent = ref(false)
@@ -168,6 +169,34 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     token.value = newToken
   }
 
+  function setEmployeeCode(code: string) {
+    employeeCode.value = code
+  }
+
+  // Populates the store from an already-submitted employee record, for HR editing.
+  function loadFromEmployee(employee: any) {
+    const data = employee.formData || {}
+    employeeType.value = employee.employeeType
+    if (data.personalInfo) Object.assign(personalInfo.value, data.personalInfo)
+    if (data.contactInfo) Object.assign(contactInfo.value, data.contactInfo)
+    if (data.familyInfo) Object.assign(familyInfo.value, data.familyInfo)
+    if (data.educationHistory) Object.assign(educationHistory.value, data.educationHistory)
+    if (data.trainingHistory) trainingHistory.value = data.trainingHistory
+    if (data.workHistory) workHistory.value = data.workHistory
+    if (data.skillsAndOther) Object.assign(skillsAndOther.value, data.skillsAndOther)
+    if (data.sensitiveInfo) Object.assign(sensitiveInfo.value, data.sensitiveInfo)
+
+    documents.value = {
+      idCard: null, houseRegistration: null, degreeCertificate: null, transcript: null,
+      bankBook: null, photo: null, militaryDocument: null, other: []
+    }
+    for (const doc of employee.documents || []) {
+      if (doc.documentType in documents.value) {
+        (documents.value as any)[doc.documentType] = doc.fileUrl
+      }
+    }
+  }
+
   function agreePdpa(signature: string) {
     pdpaConsent.value = true
     pdpaSignature.value = signature
@@ -208,6 +237,8 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     await $fetch('/api/employees', {
       method: 'POST',
       body: {
+        token: token.value,
+        employeeCode: employeeCode.value,
         employeeType: employeeType.value,
         pdpaConsent: pdpaConsent.value,
         pdpaConsentDate: pdpaConsentDate.value,
@@ -230,6 +261,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   return {
     employeeType,
     token,
+    employeeCode,
     pdpaConsent,
     pdpaConsentDate,
     pdpaSignature,
@@ -244,6 +276,8 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     documents,
     itRequest,
     setToken,
+    setEmployeeCode,
+    loadFromEmployee,
     agreePdpa,
     resetForm,
     submitForm

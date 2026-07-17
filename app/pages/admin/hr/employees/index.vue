@@ -17,6 +17,7 @@ interface EmployeeRow {
   status: string
   department: string | null
   startDate: string | null
+  probationDate: string | null
   contractEndDate: string | null
 }
 
@@ -29,6 +30,19 @@ const employees = computed(() => data.value?.employees || [])
 const searchQuery = ref('')
 const filterDepartment = ref('')
 const filterEmployeeType = ref('')
+const filterProbationDateFrom = ref('')
+const filterProbationDateTo = ref('')
+const filterContractEndDateFrom = ref('')
+const filterContractEndDateTo = ref('')
+
+function inRange(dateValue: string | null, from: string, to: string) {
+  if (!from && !to) return true
+  if (!dateValue) return false
+  const d = dateValue.slice(0, 10)
+  if (from && d < from) return false
+  if (to && d > to) return false
+  return true
+}
 
 const filteredEmployees = computed(() => {
   return employees.value.filter(emp => {
@@ -40,6 +54,12 @@ const filteredEmployees = computed(() => {
       return false
     }
     if (filterEmployeeType.value && emp.employeeType !== filterEmployeeType.value) {
+      return false
+    }
+    if (!inRange(emp.probationDate, filterProbationDateFrom.value, filterProbationDateTo.value)) {
+      return false
+    }
+    if (!inRange(emp.contractEndDate, filterContractEndDateFrom.value, filterContractEndDateTo.value)) {
       return false
     }
     return true
@@ -127,20 +147,53 @@ const submitOffboardRequest = async () => {
     </PageHeader>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 relative">
-      <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <select v-model="filterDepartment" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
-            <option value="">ทุกแผนก</option>
-            <option v-for="dept in DEPARTMENTS" :key="dept" :value="dept">{{ dept }}</option>
-          </select>
-          <select v-model="filterEmployeeType" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
-            <option value="">ทุกประเภท</option>
-            <option value="MONTHLY">รายเดือน</option>
-            <option value="DAILY">รายวัน</option>
-          </select>
-          <input v-model="searchQuery" type="text" placeholder="ค้นหาชื่อพนักงาน..." class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+      <div class="p-6 border-b border-slate-200 bg-slate-50/60 rounded-t-2xl">
+        <div class="flex flex-wrap items-end gap-x-5 gap-y-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500">แผนก</label>
+            <select v-model="filterDepartment" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+              <option value="">ทุกแผนก</option>
+              <option v-for="dept in DEPARTMENTS" :key="dept" :value="dept">{{ dept }}</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500">ประเภท</label>
+            <select v-model="filterEmployeeType" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+              <option value="">ทุกประเภท</option>
+              <option value="MONTHLY">รายเดือน</option>
+              <option value="DAILY">รายวัน</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500">ผ่านทดลองงาน</label>
+            <div class="flex items-center gap-1.5 px-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500">
+              <input v-model="filterProbationDateFrom" type="date" class="py-2 text-sm border-none bg-transparent focus:outline-none focus:ring-0 w-[130px]">
+              <span class="text-slate-300">–</span>
+              <input v-model="filterProbationDateTo" type="date" class="py-2 text-sm border-none bg-transparent focus:outline-none focus:ring-0 w-[130px]">
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500">วันหมดสัญญา</label>
+            <div class="flex items-center gap-1.5 px-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500">
+              <input v-model="filterContractEndDateFrom" type="date" class="py-2 text-sm border-none bg-transparent focus:outline-none focus:ring-0 w-[130px]">
+              <span class="text-slate-300">–</span>
+              <input v-model="filterContractEndDateTo" type="date" class="py-2 text-sm border-none bg-transparent focus:outline-none focus:ring-0 w-[130px]">
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-slate-500">ค้นหา</label>
+            <div class="relative">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <input v-model="searchQuery" type="text" placeholder="ค้นหาชื่อพนักงาน..." class="pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 w-56">
+            </div>
+          </div>
         </div>
       </div>
+      <div class="h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-blue-600"></div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-xs">
@@ -150,6 +203,7 @@ const submitOffboardRequest = async () => {
               <th class="px-6 py-3 font-semibold">ประเภท</th>
               <th class="px-6 py-3 font-semibold">สถานะ</th>
               <th class="px-6 py-3 font-semibold whitespace-nowrap">วันที่เริ่มงาน</th>
+              <th class="px-6 py-3 font-semibold whitespace-nowrap">วันที่ผ่านทดลองงาน</th>
               <th class="px-6 py-3 font-semibold whitespace-nowrap">วันหมดสัญญา</th>
               <th class="px-6 py-3 font-semibold text-right">การจัดการ</th>
             </tr>
@@ -168,6 +222,10 @@ const submitOffboardRequest = async () => {
               </td>
               <td class="px-6 py-4 text-slate-600 whitespace-nowrap">{{ emp.startDate?.slice(0, 10) || '-' }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
+                <span v-if="emp.employeeType === 'MONTHLY'" class="text-slate-600">{{ emp.probationDate?.slice(0, 10) || '-' }}</span>
+                <span v-else class="text-slate-300">—</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
                 <span v-if="emp.employeeType === 'DAILY'" :class="isContractSoon(emp.contractEndDate) ? 'text-red-600 font-semibold' : 'text-slate-600'">
                   {{ emp.contractEndDate?.slice(0, 10) || '-' }}
                 </span>
@@ -182,6 +240,10 @@ const submitOffboardRequest = async () => {
                   <NuxtLink :to="`/admin/hr/employees/${emp.id}`" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                     ดูรายละเอียด
+                  </NuxtLink>
+                  <NuxtLink :to="`/admin/hr/applications/edit/${emp.id}`" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    แก้ไขข้อมูล
                   </NuxtLink>
                 </div>
               </td>

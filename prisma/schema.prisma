@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id               String   @id @default(cuid())
+  id               Int      @id @default(autoincrement())
   username         String   @unique
   name             String
   email            String   @unique
@@ -22,7 +22,7 @@ model User {
 }
 
 model Employee {
-  id              String    @id @default(cuid())
+  id              Int       @id @default(autoincrement())
   firstName       String    @map("first_name")
   lastName        String    @map("last_name")
   email           String
@@ -42,16 +42,35 @@ model Employee {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  documents        Document[]
-  itRequests       ITRequest[]
-  contractRenewals ContractRenewal[]
+  documents         Document[]
+  itRequests        ITRequest[]
+  contractRenewals  ContractRenewal[]
+  onboardingInvites OnboardingInvite[]
 
   @@map("employees")
 }
 
+model OnboardingInvite {
+  id           Int       @id @default(autoincrement())
+  token        String    @unique
+  employeeCode String    @map("employee_code")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  status       String    @default("PENDING") // 'PENDING' | 'SUBMITTED' | 'EXPIRED' | 'REVOKED'
+  expiresAt    DateTime  @map("expires_at")
+  submittedAt  DateTime? @map("submitted_at")
+  employeeId   Int?      @map("employee_id")
+  createdBy    String    @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@map("onboarding_invites")
+}
+
 model Document {
-  id           String   @id @default(cuid())
-  employeeId   String   @map("employee_id")
+  id           Int      @id @default(autoincrement())
+  employeeId   Int      @map("employee_id")
   documentType String   @map("document_type")
   fileUrl      String   @map("file_url")
   uploadedAt   DateTime @default(now()) @map("uploaded_at")
@@ -62,8 +81,8 @@ model Document {
 }
 
 model ITRequest {
-  id             String   @id @default(cuid())
-  employeeId     String?  @map("employee_id")
+  id             Int      @id @default(autoincrement())
+  employeeId     Int?     @map("employee_id")
   employeeName   String   @map("employee_name")
   type           String // 'ONBOARDING' | 'OFFBOARDING'
   status         String   @default("PENDING") // 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
@@ -82,8 +101,8 @@ model ITRequest {
 }
 
 model ContractRenewal {
-  id              String    @id @default(cuid())
-  employeeId      String    @map("employee_id")
+  id              Int       @id @default(autoincrement())
+  employeeId      Int       @map("employee_id")
   previousEndDate DateTime? @map("previous_end_date")
   newEndDate      DateTime  @map("new_end_date")
   note            String?
@@ -96,7 +115,7 @@ model ContractRenewal {
 }
 
 model AssetCategory {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   name      String
   code      String   @unique
   status    String   @default("Active")
@@ -109,10 +128,10 @@ model AssetCategory {
 }
 
 model Asset {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   assetTag   String   @unique @map("asset_tag")
   assetType  String   @map("asset_type")
-  categoryId String?  @map("category_id")
+  categoryId Int?     @map("category_id")
   status     String   @default("IN_STOCK") // 'IN_STOCK' | 'ASSIGNED' | 'MAINTENANCE'
   assignedTo String?  @map("assigned_to")
   department String?

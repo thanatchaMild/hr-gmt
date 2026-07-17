@@ -11,7 +11,7 @@ interface EmployeeUpdatePayload {
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireRole(event, 'HR_ADMIN')
-  const id = getRouterParam(event, 'id')
+  const id = Number(getRouterParam(event, 'id'))
   const body = await readBody<EmployeeUpdatePayload>(event)
 
   const existing = await prisma.employee.findUnique({ where: { id } })

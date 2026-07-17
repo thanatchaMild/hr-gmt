@@ -1,7 +1,7 @@
 interface CreateAssetPayload {
   assetTag: string
   assetType: string
-  categoryId?: string
+  categoryId?: string | number
 }
 
 export default defineEventHandler(async (event) => {
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     data: {
       assetTag: body.assetTag,
       assetType: body.assetType,
-      categoryId: body.categoryId,
+      categoryId: body.categoryId !== undefined && body.categoryId !== '' ? Number(body.categoryId) : undefined,
       status: 'IN_STOCK'
     }
   })

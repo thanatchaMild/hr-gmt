@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     ...probationDue.map((emp) => ({
       id: `probation-${emp.id}`,
       type: 'PROBATION_WARNING' as const,
-      message: `Employee ${emp.firstName} ${emp.lastName} is approaching probation end date (${emp.probationDate?.toISOString().slice(0, 10)}).`,
+      message: `${emp.firstName} ${emp.lastName} ใกล้ครบกำหนดผ่านทดลองงาน (${emp.probationDate?.toISOString().slice(0, 10)})`,
       employeeId: emp.id,
       createdAt: new Date().toISOString(),
       read: false
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     ...contractDue.map((emp) => ({
       id: `contract-${emp.id}`,
       type: 'CONTRACT_WARNING' as const,
-      message: `Employee ${emp.firstName} ${emp.lastName} contract expires soon (${emp.contractEndDate?.toISOString().slice(0, 10)}).`,
+      message: `${emp.firstName} ${emp.lastName} สัญญาจ้างใกล้หมดอายุ (${emp.contractEndDate?.toISOString().slice(0, 10)})`,
       employeeId: emp.id,
       createdAt: new Date().toISOString(),
       read: false

@@ -5,7 +5,7 @@ interface RenewContractPayload {
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireRole(event, 'HR_ADMIN')
-  const id = getRouterParam(event, 'id')
+  const id = Number(getRouterParam(event, 'id'))
   const body = await readBody<RenewContractPayload>(event)
 
   if (!body?.newEndDate) {
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const [renewal] = await prisma.$transaction([
     prisma.contractRenewal.create({
       data: {
-        employeeId: id!,
+        employeeId: id,
         previousEndDate: employee.contractEndDate,
         newEndDate: new Date(body.newEndDate),
         note: body.note,

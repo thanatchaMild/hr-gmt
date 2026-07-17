@@ -6,7 +6,7 @@ interface UpdateCategoryPayload {
 
 export default defineEventHandler(async (event) => {
   await requireRole(event, 'IT_ADMIN')
-  const id = getRouterParam(event, 'id')
+  const id = Number(getRouterParam(event, 'id'))
   const body = await readBody<UpdateCategoryPayload>(event)
 
   const category = await prisma.assetCategory.update({

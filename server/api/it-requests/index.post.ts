@@ -1,5 +1,5 @@
 interface CreateITRequestPayload {
-  employeeId?: string
+  employeeId?: string | number
   employeeName: string
   type: 'ONBOARDING' | 'OFFBOARDING'
   requestedItems: string[]
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   const request = await prisma.iTRequest.create({
     data: {
-      employeeId: body.employeeId,
+      employeeId: body.employeeId !== undefined && body.employeeId !== '' ? Number(body.employeeId) : undefined,
       employeeName: body.employeeName,
       type: body.type,
       status: 'PENDING',

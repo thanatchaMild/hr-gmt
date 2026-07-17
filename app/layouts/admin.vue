@@ -34,6 +34,13 @@ const logout = async () => {
             <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">Onboarding</span>
           </div>
         </NuxtLink>
+        <NuxtLink v-if="authStore.isHRAdmin" to="/admin/hr/onboarding-invites" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors" active-class="!bg-gradient-to-r !from-blue-50 !to-blue-50/40 !text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-4 4a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l4-4a4 4 0 015.656 5.656l-1.5 1.5"></path></svg>
+          <div class="flex flex-col leading-tight">
+            <span class="text-sm font-medium">ลิงก์สมัครงาน</span>
+            <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">Invite Links</span>
+          </div>
+        </NuxtLink>
         <NuxtLink v-if="authStore.isHRAdmin" to="/admin/hr/employees" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors" active-class="!bg-gradient-to-r !from-blue-50 !to-blue-50/40 !text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100">
           <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
           <div class="flex flex-col leading-tight">

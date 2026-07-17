@@ -1,4 +1,5 @@
 interface OnboardingPayload {
+  token?: string
   employeeType: 'DAILY' | 'MONTHLY'
   personalInfo: { firstName: string; lastName: string }
   contactInfo: { email: string; mobilePhone: string }
@@ -16,7 +17,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing required onboarding fields' })
   }
 
-  const { personalInfo, contactInfo, documents, itRequest, employeeType, pdpaConsent, pdpaConsentDate, ...rest } = body
+  // A token is optional — present only when the candidate came in through an HR-generated invite link.
+  let invite = null
+  if (body.token) {
+    invite = await prisma.onboardingInvite.findUnique({ where: { token: body.token } })
+    if (!invite || invite.status !== 'PENDING' || invite.expiresAt < new Date()) {
+      throw createError({ statusCode: 403, statusMessage: 'ลิงก์นี้ไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว' })
+    }
+  }
+
+  const { token: _token, employeeCode: _employeeCode, personalInfo, contactInfo, documents, itRequest, employeeType, pdpaConsent, pdpaConsentDate, ...rest } = body
 
   const employee = await prisma.employee.create({
     data: {
@@ -26,6 +36,7 @@ export default defineEventHandler(async (event) => {
       phone: contactInfo.mobilePhone,
       employeeType,
       status: 'SUBMITTED',
+      employeeCode: invite?.employeeCode,
       pdpaConsent: !!pdpaConsent,
       pdpaConsentDate: pdpaConsentDate ? new Date(pdpaConsentDate) : null,
       formData: JSON.stringify({ personalInfo, contactInfo, ...rest }),
@@ -36,6 +47,13 @@ export default defineEventHandler(async (event) => {
       }
     }
   })
+
+  if (invite) {
+    await prisma.onboardingInvite.update({
+      where: { id: invite.id },
+      data: { status: 'SUBMITTED', submittedAt: new Date(), employeeId: employee.id }
+    })
+  }
 
   const requestedItems = [...(itRequest?.equipment || []), ...(itRequest?.softwareAccounts || [])]
   if (requestedItems.length > 0) {

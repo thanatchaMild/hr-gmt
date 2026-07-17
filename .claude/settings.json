@@ -40,7 +40,26 @@
       "Bash(npm install *)",
       "Bash(node scripts-measure-tmp.mjs)",
       "Bash(curl -s \"http://localhost:3000/onboarding/preview\" -o scratch-preview-check.html)",
-      "Bash(node scripts-diag-tmp.mjs)"
+      "Bash(node scripts-diag-tmp.mjs)",
+      "Bash(powershell -NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\\\"Name='node.exe'\\\\\" | Select-Object ProcessId, CommandLine | Format-List\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 33392,14212,18624,7428 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(curl -s -o /dev/null -w \"invites page: %{http_code}\\\\n\" http://localhost:3000/admin/hr/onboarding-invites)",
+      "Bash(curl -s -o /dev/null -w \"onboarding pdpa \\(no token\\): %{http_code}\\\\n\" http://localhost:3000/onboarding/pdpa)",
+      "Bash(curl -s -o /dev/null -w \"invalid-link: %{http_code}\\\\n\" http://localhost:3000/onboarding/invalid-link)",
+      "Bash(curl -s -o /dev/null -w \"edit page: %{http_code}\\\\n\" \"http://localhost:3000/admin/hr/applications/edit/test123\")",
+      "Bash(curl -s -o /dev/null -w \"applications list: %{http_code}\\\\n\" http://localhost:3000/admin/hr/applications)",
+      "Bash(curl -s -b /tmp/cookies.txt -o /tmp/invites.html -w \"invites page: %{http_code}\\\\n\" http://localhost:3000/admin/hr/onboarding-invites)",
+      "Bash(curl -s -b /tmp/cookies.txt -o /tmp/applist.html -w \"applications list: %{http_code}\\\\n\" http://localhost:3000/admin/hr/applications)",
+      "Bash(curl -s -b /tmp/cookies.txt -o /tmp/emplist.html -w \"employees list: %{http_code}\\\\n\" http://localhost:3000/admin/hr/employees)",
+      "Bash(curl -s -b /tmp/cookies.txt -X POST http://localhost:3000/api/onboarding-invites -H \"Content-Type: application/json\" -d '{\"employeeCode\":\"EMP-TEST-001\",\"firstName\":\"ทดสอบ\",\"lastName\":\"ระบบ\"}')",
+      "Bash(tee /tmp/invite.json)",
+      "Bash(curl -s -b /tmp/cookies.txt http://localhost:3000/api/onboarding-invites)",
+      "Bash(curl -s -b /tmp/cookies.txt -X POST http://localhost:3000/api/onboarding-invites -H \"Content-Type: application/json\" --data-binary \"@C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-hr-management\\\\896e9074-3cbb-4bf2-a3e1-c7c8b23e0b9d\\\\scratchpad\\\\invite-payload.json\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 33876,20896,22620,21212 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/employees -H \"Content-Type: application/json\" --data-binary \"@C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-hr-management\\\\896e9074-3cbb-4bf2-a3e1-c7c8b23e0b9d\\\\scratchpad\\\\submit-payload.json\")",
+      "Bash(curl -s \"http://localhost:3000/api/onboarding-invites/validate?token=5f70202c131770a68d7fd130438b3122e034f80c67cbbbbde0715e6f2dc92b95\")",
+      "Bash(curl -s -b /tmp/cookies.txt http://localhost:3000/api/employees/cmrodhw9c0002vgog082tfg9f)",
+      "Bash(curl -s -b /tmp/cookies.txt -X PATCH http://localhost:3000/api/employees/cmrodhw9c0002vgog082tfg9f/form-data -H \"Content-Type: application/json\" --data-binary \"@C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-hr-management\\\\896e9074-3cbb-4bf2-a3e1-c7c8b23e0b9d\\\\scratchpad\\\\edit-payload.json\")"
     ]
   }
 }

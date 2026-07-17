@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event)
-  const id = getRouterParam(event, 'id')
+  const id = Number(getRouterParam(event, 'id'))
 
   const employee = await prisma.employee.findUnique({
     where: { id },
