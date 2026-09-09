@@ -16,7 +16,7 @@ const store = useOnboardingStore()
 
 if (data.value) {
   const formData = data.value.formData || {}
-  store.employeeType = data.value.employeeType
+  store.hireType = data.value.hireType ?? data.value.employeeType
   store.pdpaConsentDate = data.value.pdpaConsentDate
   if (formData.personalInfo) Object.assign(store.personalInfo, formData.personalInfo)
   if (formData.contactInfo) Object.assign(store.contactInfo, formData.contactInfo)

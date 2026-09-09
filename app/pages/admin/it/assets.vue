@@ -3,6 +3,7 @@ definePageMeta({
   layout: 'admin'
 })
 import RequirePermission from '~/components/admin/RequirePermission.vue'
+import AppPagination from '~/components/admin/AppPagination.vue'
 import PageHeader from '~/components/admin/PageHeader.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import EmptyState from '~/components/admin/EmptyState.vue'
@@ -28,7 +29,6 @@ const { data: categoriesData } = await useFetch<{ categories: CategoryOption[] }
 
 const assets = computed(() => assetsData.value?.assets || [])
 const categories = computed(() => categoriesData.value?.categories || [])
-
 const searchQuery = ref('')
 const filteredAssets = computed(() => {
   if (!searchQuery.value) return assets.value
@@ -38,6 +38,13 @@ const filteredAssets = computed(() => {
     asset.assetType.toLowerCase().includes(q) ||
     (asset.assignedTo || '').toLowerCase().includes(q)
   )
+})
+
+const currentPage = ref(1)
+watch(searchQuery, () => { currentPage.value = 1 })
+const paginatedAssets = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return filteredAssets.value.slice(start, start + 10)
 })
 
 const statusLabel: Record<string, { text: string; color: 'blue' | 'green' | 'orange' }> = {
@@ -147,7 +154,7 @@ const returnAsset = async (asset: AssetRow) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="asset in filteredAssets" :key="asset.id" class="hover:bg-purple-50/30 transition-colors">
+            <tr v-for="asset in paginatedAssets" :key="asset.id" class="hover:bg-purple-50/30 transition-colors">
               <td class="px-6 py-4 font-mono text-slate-600">{{ asset.assetTag }}</td>
               <td class="px-6 py-4 font-medium text-slate-900">{{ asset.assetType }}</td>
               <td class="px-6 py-4">
@@ -164,6 +171,7 @@ const returnAsset = async (asset: AssetRow) => {
         </table>
         <EmptyState v-if="filteredAssets.length === 0" message="ไม่พบทรัพย์สินที่ค้นหา" />
       </div>
+      <AppPagination v-model:currentPage="currentPage" :totalItems="filteredAssets.length" :itemsPerPage="10" />
     </div>
 
     <!-- Add Asset Modal -->

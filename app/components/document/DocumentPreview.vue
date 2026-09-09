@@ -2,6 +2,7 @@
 import { useOnboardingStore } from '~/stores/onboarding'
 import { pdpaHtml } from '~/utils/pdpaContent'
 import { consentHtml } from '~/utils/consentContent'
+import { hireTypeLabel } from '~/utils/hireType'
 import { computed } from 'vue'
 
 const store = useOnboardingStore()
@@ -39,21 +40,19 @@ function splitBySections(html: string, markers: string[]): string[] {
   return chunks
 }
 
+// 3 physical pages total. Section 3's bullet list is by far the longest section, and section 11's
+// rights list is the next longest, so pages are balanced by content weight rather than an even
+// 1-3/4-7/8-11 section split: page A = sections 1-3, page B = sections 4-9, page C = sections 10-11
+// (12 is hardcoded in the template, alongside the signature)
 const pdpaChunks = computed(() => splitBySections(cleanPdpaHtml.value, [
-  '<h3>3. ข้อมูลส่วนบุคคลที่เก็บรวบรวม</h3>',
   '<h3>4. ข้อมูลส่วนบุคคลที่มีความอ่อนไหว</h3>',
-  '<h3>5. การเก็บรวบรวม และการได้รับข้อมูลส่วนบุคคลของท่าน</h3>',
-  '<h3>8. การเปิดเผยข้อมูลส่วนบุคคลให้บุคคลอื่น</h3>',
   '<h3>10. มาตรการความปลอดภัยสำหรับข้อมูลส่วนบุคคล</h3>',
   '<h3>12. ข้อมูลเกี่ยวกับผู้ควบคุมข้อมูลส่วนบุคคลและเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล</h3>'
 ]))
 
-const cleanPdpaHtmlPart1a = computed(() => pdpaChunks.value[0]) // sections 1-2
-const cleanPdpaHtmlPart1b = computed(() => pdpaChunks.value[1]) // section 3
-const cleanPdpaHtmlPart1c = computed(() => pdpaChunks.value[2]) // section 4
-const cleanPdpaHtmlPart2a = computed(() => pdpaChunks.value[3]) // sections 5-7
-const cleanPdpaHtmlPart2b = computed(() => pdpaChunks.value[4]) // sections 8-9
-const cleanPdpaHtmlPart3 = computed(() => pdpaChunks.value[5]) // sections 10-11 (section 12 is hardcoded in the template)
+const cleanPdpaHtmlPartA = computed(() => pdpaChunks.value[0]) // sections 1-3
+const cleanPdpaHtmlPartB = computed(() => pdpaChunks.value[1]) // sections 4-9
+const cleanPdpaHtmlPartC = computed(() => pdpaChunks.value[2]) // sections 10-11
 
 const cleanConsentHtml = computed(() => {
   let html = consentHtml
@@ -64,14 +63,13 @@ const cleanConsentHtml = computed(() => {
   return html
 })
 
+// 2 physical pages, matching FM-HRS-03.pdf's page 7/8 grouping: page A = sections 1-2, page B = section 3
 const consentChunks = computed(() => splitBySections(cleanConsentHtml.value, [
-  '<h3>2. ข้อมูลส่วนบุคคลที่เก็บรวบรวม</h3>',
   '<h3>3. ข้อมูลส่วนบุคคลที่มีความอ่อนไหว</h3>'
 ]))
 
-const cleanConsentHtmlPart1a = computed(() => consentChunks.value[0]) // section 1
-const cleanConsentHtmlPart1b = computed(() => consentChunks.value[1]) // section 2
-const cleanConsentHtmlPart2 = computed(() => consentChunks.value[2]) // section 3
+const cleanConsentHtmlPartA = computed(() => consentChunks.value[0]) // sections 1-2
+const cleanConsentHtmlPartB = computed(() => consentChunks.value[1]) // section 3
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
@@ -100,28 +98,28 @@ const printDocument = () => {
       <div class="content flex-1">
         
         <!-- Header -->
-        <div class="flex justify-between items-start mb-2">
+        <div class="flex justify-between items-start mb-1">
           <div class="w-1/3">
-            <img src="/logo_form.jpg" alt="Logo" class="h-14 object-contain">
+            <img src="/logo_form.jpg" alt="Logo" class="h-12 object-contain">
           </div>
-          <div class="w-1/3 text-center flex flex-col items-center justify-center pt-2">
+          <div class="w-1/3 text-center flex flex-col items-center justify-center">
             <div class="font-bold text-sm tracking-wide">ใบสมัครงาน</div>
-            <div class="text-[11px] uppercase mt-1">APPLICATION FORM</div>
+            <div class="text-[11px] uppercase mt-0.5">APPLICATION FORM</div>
           </div>
           <div class="w-1/3 flex justify-end">
-            <div class="w-[2.5cm] h-[3.3cm] border border-black flex flex-col items-center justify-center text-center text-xs text-gray-700">
+            <div class="w-[2.2cm] h-[2.8cm] border border-black flex flex-col items-center justify-center text-center text-xs text-gray-700">
               <div class="text-[10px]">ติดรูปถ่ายหน้าตรง</div>
               <div class="mt-1 text-[10px]">Photo</div>
             </div>
           </div>
         </div>
 
-        <div class="mb-2 text-[11px] text-gray-700">
+        <div class="mb-1 text-[11px] text-gray-700">
           โปรดกรอกข้อความในใบสมัครโดยละเอียดและครบถ้วน / Please complete the following form and state details.
         </div>
 
         <!-- Position Applied Box -->
-        <div class="border-2 border-black w-full mb-2 text-[12px]">
+        <div class="border-2 border-black w-full mb-1 text-[12px]">
           <div class="border-b border-black px-2 py-1 font-bold">
             ตำแหน่งที่ต้องการสมัคร
           </div>
@@ -133,7 +131,7 @@ const printDocument = () => {
               </span>
               <span>2. </span>
               <span class="border-b border-dotted border-black flex-1 text-center font-medium text-blue-800">
-                {{ store.employeeType === 'DAILY' ? 'พนักงานรายวัน' : (store.employeeType === 'MONTHLY' ? 'พนักงานรายเดือน' : '') }}
+                {{ hireTypeLabel(store.hireType) }}
               </span>
             </div>
           </div>
@@ -149,7 +147,7 @@ const printDocument = () => {
         </div>
 
         <!-- 1. PERSONAL DETAILS -->
-        <div class="mb-4 text-[11.5px]">
+        <div class="mb-2 text-[11.5px]">
           <div class="font-bold mb-1 text-[12.5px]">1. ประวัติส่วนตัว PERSONAL DETAILS</div>
           <table class="w-full border-collapse border-[1.5px] border-black text-left">
             <tbody>
@@ -179,15 +177,15 @@ const printDocument = () => {
               </tr>
               <tr>
                 <td class="border border-black px-2 py-0.5 w-1/3">
-                  <div class="mb-2">โทรศัพท์<br><span class="text-[10px]">Telephone Home</span></div>
+                  <div class="mb-0.5">โทรศัพท์<br><span class="text-[10px]">Telephone Home</span></div>
                   <div class="text-center font-medium text-blue-800">{{ store.contactInfo.homePhone || '-' }}</div>
                 </td>
                 <td class="border border-black px-2 py-0.5 w-1/3">
-                  <div class="mb-2">โทรศัพท์มือถือ<br><span class="text-[10px]">Mobile Phone</span></div>
+                  <div class="mb-0.5">โทรศัพท์มือถือ<br><span class="text-[10px]">Mobile Phone</span></div>
                   <div class="text-center font-medium text-blue-800">{{ store.contactInfo.mobilePhone || '-' }}</div>
                 </td>
                 <td class="border border-black px-2 py-0.5 w-1/3">
-                  <div class="mb-2">อีเมล์<br><span class="text-[10px]">E-mail</span></div>
+                  <div class="mb-0.5">อีเมล์<br><span class="text-[10px]">E-mail</span></div>
                   <div class="text-center font-medium text-blue-800">{{ store.contactInfo.email || '-' }}</div>
                 </td>
               </tr>
@@ -303,17 +301,7 @@ const printDocument = () => {
             </tbody>
           </table>
         </div>
-      </div>
-      <!-- Footer Page 1 -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        1/13
-      </div>
-    </div>
 
-
-    <!-- PAGE 1B: FAMILY DETAILS -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1">
         <!-- 2. FAMILY DETAILS -->
         <div class="mb-2 text-[11.5px]">
           <div class="font-bold mb-1 text-[12.5px]">2. รายละเอียดครอบครัว FAMILY DETAILS</div>
@@ -367,157 +355,157 @@ const printDocument = () => {
                 </td>
               </tr>
               <tr class="bg-gray-50">
-                <td class="border border-black px-2 py-1 w-[15%]">ครอบครัว<br><span class="text-[10px]">Family Details</span></td>
-                <td class="border border-black px-2 py-1 w-[30%]">ชื่อ-นามสกุล<br><span class="text-[10px]">Name-Surname</span></td>
-                <td class="border border-black px-2 py-1 w-[10%]">อายุ<br><span class="text-[10px]">Age</span></td>
-                <td class="border border-black px-2 py-1 w-[25%]">อาชีพ/ตำแหน่ง<br><span class="text-[10px]">Occupation/Position</span></td>
-                <td class="border border-black px-2 py-1 w-[20%]">โทรศัพท์<br><span class="text-[10px]">Telephone</span></td>
+                <td class="border border-black px-2 py-0.5 w-[15%]">ครอบครัว<br><span class="text-[10px]">Family Details</span></td>
+                <td class="border border-black px-2 py-0.5 w-[30%]">ชื่อ-นามสกุล<br><span class="text-[10px]">Name-Surname</span></td>
+                <td class="border border-black px-2 py-0.5 w-[10%]">อายุ<br><span class="text-[10px]">Age</span></td>
+                <td class="border border-black px-2 py-0.5 w-[25%]">อาชีพ/ตำแหน่ง<br><span class="text-[10px]">Occupation/Position</span></td>
+                <td class="border border-black px-2 py-0.5 w-[20%]">โทรศัพท์<br><span class="text-[10px]">Telephone</span></td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">บิดา/Father</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.father.name }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.father.age }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.father.occupation }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.father.phone }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">บิดา/Father</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.father.name }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.father.age }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.father.occupation }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.father.phone }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">มารดา/Mother</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.mother.name }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.mother.age }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.mother.occupation }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.mother.phone }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">มารดา/Mother</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.mother.name }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.mother.age }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.mother.occupation }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.mother.phone }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left align-top" rowspan="4">พี่น้อง...............คน<br><span class="text-[10px]">Brother/Sister</span></td>
-                <td class="border border-black px-2 py-1 text-left">1. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.age || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.occupation || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left align-top" rowspan="4">พี่น้อง...............คน<br><span class="text-[10px]">Brother/Sister</span></td>
+                <td class="border border-black px-2 py-0.5 text-left">1. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.age || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.occupation || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[0]?.phone || '' }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">2. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.age || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.occupation || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">2. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.age || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.occupation || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[1]?.phone || '' }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">3. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.age || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.occupation || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">3. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.age || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.occupation || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[2]?.phone || '' }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">4. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.age || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.occupation || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">4. <span class="font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.age || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.occupation || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.siblings[3]?.phone || '' }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">คู่สมรส/Spouse</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.spouse.name }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.spouse.age }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.spouse.occupation }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.spouse.phone }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">คู่สมรส/Spouse</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.spouse.name }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.spouse.age }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.spouse.occupation }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.spouse.phone }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left align-top" rowspan="2">จำนวนบุตร..........คน<br><span class="text-[10px]">Number of Children</span></td>
-                <td class="border border-black px-2 py-1 text-left">1. <span class="font-medium text-blue-800">{{ store.familyInfo.children[0]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.children[0]?.age || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.children[0]?.occupation || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.children[0]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left align-top" rowspan="2">จำนวนบุตร..........คน<br><span class="text-[10px]">Number of Children</span></td>
+                <td class="border border-black px-2 py-0.5 text-left">1. <span class="font-medium text-blue-800">{{ store.familyInfo.children[0]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.children[0]?.age || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.children[0]?.occupation || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.children[0]?.phone || '' }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1 text-left">2. <span class="font-medium text-blue-800">{{ store.familyInfo.children[1]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.children[1]?.age || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.children[1]?.occupation || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.familyInfo.children[1]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">2. <span class="font-medium text-blue-800">{{ store.familyInfo.children[1]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.children[1]?.age || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.children[1]?.occupation || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.familyInfo.children[1]?.phone || '' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-      <!-- Footer Page 1B -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        2/13
+      <!-- Footer Page 1 -->
+      <div class="flex justify-end text-[10.5px] mt-2">
+        1/8
       </div>
     </div>
 
 
     <!-- PAGE 2 -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-6">
+      <div class="content flex-1 space-y-2">
         <!-- 3. Education -->
         <div class="text-[11.5px]">
           <div class="font-bold text-[12.5px] mb-1">3. ประวัติการศึกษา EDUCATION BACKGROUND</div>
           <table class="w-full border-collapse border-[1.5px] border-black text-center">
             <thead class="bg-gray-50">
               <tr>
-                <th class="border border-black px-2 py-1 w-[22%]">ระดับการศึกษา<br><span class="text-[10px] font-normal">Level</span></th>
-                <th class="border border-black px-2 py-1 w-[20%]">สถานศึกษา/จังหวัด<br><span class="text-[10px] font-normal">Institute/District</span></th>
-                <th class="border border-black px-2 py-1 w-[18%]">วุฒิการศึกษา<br><span class="text-[10px] font-normal">Degree/Certificate</span></th>
-                <th class="border border-black px-2 py-1 w-[20%]">คณะ/วิชาเอก<br><span class="text-[10px] font-normal">Faculty/Major</span></th>
-                <th class="border border-black px-2 py-1 w-[10%]">ปีที่จบ<br><span class="text-[10px] font-normal">Graduated</span></th>
-                <th class="border border-black px-2 py-1 w-[10%]">คะแนนเฉลี่ย<br><span class="text-[10px] font-normal">GPA</span></th>
+                <th class="border border-black px-2 py-0.5 w-[22%]">ระดับการศึกษา<br><span class="text-[10px] font-normal">Level</span></th>
+                <th class="border border-black px-2 py-0.5 w-[20%]">สถานศึกษา/จังหวัด<br><span class="text-[10px] font-normal">Institute/District</span></th>
+                <th class="border border-black px-2 py-0.5 w-[18%]">วุฒิการศึกษา<br><span class="text-[10px] font-normal">Degree/Certificate</span></th>
+                <th class="border border-black px-2 py-0.5 w-[20%]">คณะ/วิชาเอก<br><span class="text-[10px] font-normal">Faculty/Major</span></th>
+                <th class="border border-black px-2 py-0.5 w-[10%]">ปีที่จบ<br><span class="text-[10px] font-normal">Graduated</span></th>
+                <th class="border border-black px-2 py-0.5 w-[10%]">คะแนนเฉลี่ย<br><span class="text-[10px] font-normal">GPA</span></th>
               </tr>
             </thead>
             <tbody>
               <!-- Secondary -->
               <tr>
-                <td class="border border-black px-2 py-1 text-left">มัธยมศึกษาตอนต้น<br><span class="text-[10px]">secondary</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.institution || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.degree || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.major || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.graduatedYear || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.gpa || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">มัธยมศึกษาตอนต้น<br><span class="text-[10px]">secondary</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.institution || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.degree || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.major || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.graduatedYear || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนต้น'))?.gpa || '' }}</td>
               </tr>
               <!-- High School -->
               <tr>
-                <td class="border border-black px-2 py-1 text-left">มัธยมศึกษาตอนปลาย/ปวช.<br><span class="text-[10px]">High School/Vocational</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.institution || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.degree || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.major || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.graduatedYear || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.gpa || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">มัธยมศึกษาตอนปลาย/ปวช.<br><span class="text-[10px]">High School/Vocational</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.institution || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.degree || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.major || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.graduatedYear || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ตอนปลาย') || r.level.includes('ปวช'))?.gpa || '' }}</td>
               </tr>
               <!-- Diploma -->
               <tr>
-                <td class="border border-black px-2 py-1 text-left">อนุปริญญา/ปวส.<br><span class="text-[10px]">Diploma/Higher Vocational</span></td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.institution || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.degree || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.major || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.graduatedYear || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.gpa || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">อนุปริญญา/ปวส.<br><span class="text-[10px]">Diploma/Higher Vocational</span></td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.institution || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.degree || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.major || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.graduatedYear || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อนุปริญญา') || r.level.includes('ปวส'))?.gpa || '' }}</td>
               </tr>
               <!-- Bachelor -->
               <tr>
-                <td class="border border-black px-2 py-1 text-left">ปริญญาตรี/Bachelor Degree</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.institution || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.degree || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.major || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.graduatedYear || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.gpa || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">ปริญญาตรี/Bachelor Degree</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.institution || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.degree || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.major || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.graduatedYear || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาตรี'))?.gpa || '' }}</td>
               </tr>
               <!-- Master -->
               <tr>
-                <td class="border border-black px-2 py-1 text-left">ปริญญาโท/Master Degree</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.institution || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.degree || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.major || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.graduatedYear || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.gpa || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">ปริญญาโท/Master Degree</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.institution || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.degree || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.major || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.graduatedYear || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('ปริญญาโท'))?.gpa || '' }}</td>
               </tr>
               <!-- Other -->
               <tr>
-                <td class="border border-black px-2 py-1 text-left">อื่น ๆ/Other</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.institution || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.degree || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.major || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.graduatedYear || '' }}</td>
-                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.gpa || '' }}</td>
+                <td class="border border-black px-2 py-0.5 text-left">อื่น ๆ/Other</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.institution || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.degree || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.major || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.graduatedYear || '' }}</td>
+                <td class="border border-black px-2 py-0.5 font-medium text-blue-800">{{ store.educationHistory.records.find(r => r.level.includes('อื่น ๆ'))?.gpa || '' }}</td>
               </tr>
               <!-- Continuing Studies -->
               <tr>
-                <td colspan="6" class="border border-black px-2 py-1 text-left border-t-[1.5px]">
+                <td colspan="6" class="border border-black px-2 py-0.5 text-left border-t-[1.5px]">
                   <div class="flex items-center flex-wrap gap-x-4 gap-y-1 w-full">
                     <span>ท่านจะศึกษาต่อหรือไม่/Are you continuing your studies?</span>
                     <div class="flex items-center gap-4">
@@ -538,36 +526,26 @@ const printDocument = () => {
           <table class="w-full border-collapse border-[1.5px] border-black text-center">
             <thead class="bg-gray-50">
               <tr>
-                <th class="border border-black px-2 py-1.5 w-[25%]">ชื่อหลักสูตร/Course</th>
-                <th class="border border-black px-2 py-1.5 w-[30%]">สถาบัน/Institute</th>
-                <th class="border border-black px-2 py-1.5 w-[20%]">วุฒิที่ได้รับ/<br><span class="text-[10px] font-normal">Degree/Certificate</span></th>
-                <th class="border border-black px-2 py-1.5 w-[15%]">ระยะเวลา/Period</th>
-                <th class="border border-black px-2 py-1.5 w-[10%]">ปี/Year</th>
+                <th class="border border-black px-2 py-1 w-[25%]">ชื่อหลักสูตร/Course</th>
+                <th class="border border-black px-2 py-1 w-[30%]">สถาบัน/Institute</th>
+                <th class="border border-black px-2 py-1 w-[20%]">วุฒิที่ได้รับ/<br><span class="text-[10px] font-normal">Degree/Certificate</span></th>
+                <th class="border border-black px-2 py-1 w-[15%]">ระยะเวลา/Period</th>
+                <th class="border border-black px-2 py-1 w-[10%]">ปี/Year</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td class="border border-black px-2 py-1.5 h-6"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td></tr>
-              <tr><td class="border border-black px-2 py-1.5 h-6"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td></tr>
-              <tr><td class="border border-black px-2 py-1.5 h-6"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td><td class="border border-black px-2 py-1.5"></td></tr>
+              <tr><td class="border border-black px-2 py-1 h-6"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td></tr>
+              <tr><td class="border border-black px-2 py-1 h-6"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td></tr>
+              <tr><td class="border border-black px-2 py-1 h-6"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td><td class="border border-black px-2 py-1"></td></tr>
             </tbody>
           </table>
         </div>
-      </div>
-      <!-- Footer Page 2 -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        3/13
-      </div>
-    </div>
 
-
-    <!-- PAGE 2B: EMPLOYMENT -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-6">
         <!-- 5. Employment -->
         <div class="text-[11.5px]">
           <div class="font-bold text-[12.5px] mb-1">5. ประวัติการทำงาน (เรียงจากปัจจุบันไปหาอดีต) EMPLOYMENT (LIST LAST EMPLOYMENT FIRST)</div>
           
-          <div v-for="(work, idx) in Math.max(2, store.workHistory.length)" :key="'work'+idx" class="w-full border-[1.5px] border-black text-[11px] mb-4">
+          <div v-for="(work, idx) in Math.max(2, store.workHistory.length)" :key="'work'+idx" class="w-full border-[1.5px] border-black text-[11px] mb-2">
             <div v-if="store.workHistory[idx]">
               <!-- Row 1 -->
               <div class="flex border-b border-black">
@@ -604,7 +582,7 @@ const printDocument = () => {
                 </div>
               </div>
               <!-- Row 3 -->
-              <div class="border-b border-black p-1.5 min-h-[40px]">
+              <div class="border-b border-black p-1.5 min-h-[26px]">
                 <div class="flex gap-2">
                   <span class="whitespace-nowrap">ลักษณะงานที่รับผิดชอบโดยย่อ</span>
                   <span class="font-medium text-blue-800">{{ store.workHistory[idx].responsibility }}</span>
@@ -633,7 +611,7 @@ const printDocument = () => {
                 </div>
               </div>
               <!-- Row 5 Data -->
-              <div class="flex border-b border-black h-8 text-blue-800 font-medium">
+              <div class="flex border-b border-black h-6 text-blue-800 font-medium">
                 <div class="w-[17.5%] p-1.5">{{ store.workHistory[idx].startDate }}</div>
                 <div class="w-[17.5%] border-r border-black p-1.5 text-center">{{ store.workHistory[idx].endDate }}</div>
                 <div class="w-[30%] border-r border-black p-1.5">{{ store.workHistory[idx].firstPosition }}</div>
@@ -656,7 +634,7 @@ const printDocument = () => {
                 <div class="w-[65%] border-r border-black p-1.5"><div class="flex gap-2"><span>ที่อยู่</span></div><div class="text-[10px] mt-0.5">Address</div></div>
                 <div class="w-[35%] p-1.5"><div class="flex gap-2"><span>โทรศัพท์</span></div><div class="text-[10px] mt-0.5">Telephone</div></div>
               </div>
-              <div class="border-b border-black p-1.5 min-h-[40px]">
+              <div class="border-b border-black p-1.5 min-h-[26px]">
                 <div class="flex gap-2"><span>ลักษณะงานที่รับผิดชอบโดยย่อ</span></div><div class="text-[10px] mt-0.5">Brief Responsibility</div>
               </div>
               <div class="flex border-b border-black bg-gray-50">
@@ -667,7 +645,7 @@ const printDocument = () => {
                 <div class="w-[30%] border-r border-black p-1.5"><div>ตำแหน่งแรกเข้า</div><div class="text-[10px] mt-0.5">First Position</div></div>
                 <div class="w-[35%] p-1.5"><div>ตำแหน่งสุดท้าย</div><div class="text-[10px] mt-0.5">Last Position</div></div>
               </div>
-              <div class="flex border-b border-black h-8">
+              <div class="flex border-b border-black h-6">
                 <div class="w-[17.5%] p-1.5"></div><div class="w-[17.5%] border-r border-black p-1.5 text-center"></div>
                 <div class="w-[30%] border-r border-black p-1.5"></div><div class="w-[35%] p-1.5"></div>
               </div>
@@ -678,16 +656,16 @@ const printDocument = () => {
           </div>
         </div>
       </div>
-      <!-- Footer Page 2B -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        4/13
+      <!-- Footer Page 2 -->
+      <div class="flex justify-end text-[10.5px] mt-2">
+        2/8
       </div>
     </div>
 
 
     <!-- PAGE 3 -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
+      <div class="content flex-1 space-y-1">
         <!-- 6. Special Abilities -->
         <div class="text-[11.5px]">
           <div class="font-bold text-[12.5px] mb-1">6. ความสามารถพิเศษ SPECIAL ABILITIES</div>
@@ -712,7 +690,7 @@ const printDocument = () => {
               </tr>
               <!-- English -->
               <tr>
-                <td class="border border-black text-left px-2 py-1.5">ภาษาอังกฤษ/English</td>
+                <td class="border border-black text-left px-2 py-1">ภาษาอังกฤษ/English</td>
                 <td class="border border-black font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language === 'English')?.speaking === 'Excellent' ? '✔' : '' }}</td>
                 <td class="border border-black font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language === 'English')?.speaking === 'Good' ? '✔' : '' }}</td>
                 <td class="border border-black font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language === 'English')?.speaking === 'Fair' ? '✔' : '' }}</td>
@@ -725,7 +703,7 @@ const printDocument = () => {
               </tr>
               <!-- Other Languages -->
               <tr>
-                <td class="border border-black text-left px-2 py-1.5 flex gap-2">อื่น ๆ /Other <span class="border-b border-dotted border-black flex-1 font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language !== 'English')?.language || '' }}</span></td>
+                <td class="border border-black text-left px-2 py-1 flex gap-2">อื่น ๆ /Other <span class="border-b border-dotted border-black flex-1 font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language !== 'English')?.language || '' }}</span></td>
                 <td class="border border-black font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language !== 'English')?.speaking === 'Excellent' ? '✔' : '' }}</td>
                 <td class="border border-black font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language !== 'English')?.speaking === 'Good' ? '✔' : '' }}</td>
                 <td class="border border-black font-medium text-blue-800">{{ store.skillsAndOther.languages.find(l => l.language !== 'English')?.speaking === 'Fair' ? '✔' : '' }}</td>
@@ -738,8 +716,8 @@ const printDocument = () => {
               </tr>
               <!-- Computer -->
               <tr>
-                <td class="border border-black text-left px-2 py-1.5 border-b-0 align-top h-[35px]">ความสามารถในการใช้คอมพิวเตอร์<br><span class="text-[10px]">Computer Ability</span></td>
-                <td colspan="9" class="border border-black text-left px-2 py-1.5 border-b-0 align-top">
+                <td class="border border-black text-left px-2 py-1 border-b-0 align-top h-[20px]">ความสามารถในการใช้คอมพิวเตอร์<br><span class="text-[10px]">Computer Ability</span></td>
+                <td colspan="9" class="border border-black text-left px-2 py-1 border-b-0 align-top">
                   <div class="flex gap-2 w-full">
                     <span>โปรแกรม<br><span class="text-[10px]">Program</span></span>
                     <span class="font-medium text-blue-800 flex-1">{{ store.skillsAndOther.computerAbility }}</span>
@@ -748,7 +726,7 @@ const printDocument = () => {
               </tr>
               <!-- Other Qualifications -->
               <tr>
-                <td colspan="10" class="border-t border-black text-left px-2 py-1.5 h-[35px] align-top bg-white">
+                <td colspan="10" class="border-t border-black text-left px-2 py-1 h-[20px] align-top bg-white">
                   <div class="flex gap-2">
                     <span>ความสามารถอื่น ๆ /Other Qualifications</span>
                     <span class="font-medium text-blue-800">{{ store.skillsAndOther.otherQualifications }}</span>
@@ -761,7 +739,7 @@ const printDocument = () => {
           <table class="w-full border-collapse border-[1.5px] border-black text-left mt-[-1.5px]">
             <tbody>
               <tr>
-                <td class="border border-black p-1.5 w-[30%]">
+                <td class="border border-black p-1 w-[30%]">
                   <div class="flex justify-between items-center w-full">
                     <div>ขับรถยนต์<br><span class="text-[10px]">Drive Car</span></div>
                     <div class="flex flex-col gap-1 text-[10.5px]">
@@ -770,7 +748,7 @@ const printDocument = () => {
                     </div>
                   </div>
                 </td>
-                <td class="border border-black p-1.5 w-[25%]">
+                <td class="border border-black p-1 w-[25%]">
                   <div class="flex justify-between items-center w-full">
                     <div>มีรถยนต์ส่วนตัว<br><span class="text-[10px]">Own a car</span></div>
                     <div class="flex flex-col gap-1 text-[10.5px]">
@@ -779,7 +757,7 @@ const printDocument = () => {
                     </div>
                   </div>
                 </td>
-                <td class="border border-black p-1.5 w-[45%]">
+                <td class="border border-black p-1 w-[45%]">
                   <div class="flex justify-between items-center w-full">
                     <div>ใบอนุญาตขับขี่<br><span class="text-[10px]">Driving License</span></div>
                     <div class="flex flex-col gap-1 text-[10.5px] flex-1 pl-4">
@@ -797,7 +775,7 @@ const printDocument = () => {
               </tr>
               <!-- Motorcycle -->
               <tr>
-                <td class="border border-black p-1.5 w-[30%]">
+                <td class="border border-black p-1 w-[30%]">
                   <div class="flex justify-between items-center w-full">
                     <div>ขับรถจักรยานยนต์<br><span class="text-[10px]">Ride Motorcycle</span></div>
                     <div class="flex flex-col gap-1 text-[10.5px]">
@@ -806,7 +784,7 @@ const printDocument = () => {
                     </div>
                   </div>
                 </td>
-                <td class="border border-black p-1.5 w-[25%]">
+                <td class="border border-black p-1 w-[25%]">
                   <div class="flex justify-between items-center w-full">
                     <div>มีรถจักรยานยนต์<br><span class="text-[10px]">Own a motorcycle</span></div>
                     <div class="flex flex-col gap-1 text-[10.5px]">
@@ -815,7 +793,7 @@ const printDocument = () => {
                     </div>
                   </div>
                 </td>
-                <td class="border border-black p-1.5 w-[45%]">
+                <td class="border border-black p-1 w-[45%]">
                   <div class="flex justify-between items-center w-full">
                     <div>ใบอนุญาตขับขี่<br><span class="text-[10px]">Driving License</span></div>
                     <div class="flex flex-col gap-1 text-[10.5px] flex-1 pl-4">
@@ -834,24 +812,14 @@ const printDocument = () => {
             </tbody>
           </table>
         </div>
-      </div>
-      <!-- Footer Page 3 -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        5/13
-      </div>
-    </div>
 
-
-    <!-- PAGE 4 -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
         <!-- 7. General Data -->
         <div class="text-[11.5px]">
           <div class="font-bold text-[12.5px] mb-1">7. ข้อมูลทั่วไป GENERAL DATA</div>
           <div class="w-full border-[1.5px] border-black flex flex-col">
             <!-- Row 1 -->
             <div class="flex border-b border-black">
-              <div class="w-[45%] border-r border-black p-2 flex flex-col gap-2">
+              <div class="w-[45%] border-r border-black p-1 flex flex-col gap-2">
                 <div>1. การไปปฏิบัติงานต่างจังหวัด<br><span class="text-[10px]">Can you work up country?</span></div>
                 <div class="flex justify-between items-center">
                   <span>เป็นการประจำ<br><span class="text-[10px]">Permanent</span></span>
@@ -864,7 +832,7 @@ const printDocument = () => {
                   <label class="flex items-center gap-1 pr-4"><input type="checkbox" disabled :checked="store.skillsAndOther.workUpCountry.temporary === true"> ไม่ขัดข้อง<br><span class="text-[10px]">Yes</span></label>
                 </div>
               </div>
-              <div class="w-[55%] p-2 flex flex-col gap-2">
+              <div class="w-[55%] p-1 flex flex-col gap-2">
                 <div>2. การเจ็บป่วยขนาดหนัก หรือโรคติดต่อร้ายแรง<br><span class="text-[10px]">Have you ever been seriously ill or contacted with contagious disease?</span></div>
                 <div class="flex items-center gap-4 mt-2">
                   <label class="flex items-center gap-1 whitespace-nowrap"><input type="checkbox" disabled :checked="store.skillsAndOther.seriousIllness.hasHistory === false"> ไม่เคย / No</label>
@@ -881,7 +849,7 @@ const printDocument = () => {
             </div>
             
             <!-- Row 2 -->
-            <div class="border-b border-black p-2 flex items-center justify-between">
+            <div class="border-b border-black p-1 flex items-center justify-between">
               <div class="w-[45%]">
                 <div>4. เคยถูกจำคุก หรือต้องโทษทางอาญาหรือไม่</div>
                 <div class="text-[10px] mt-1">Have you ever been arrested, takes custody, help for investigation (reason/เหตุผล)</div>
@@ -892,14 +860,14 @@ const printDocument = () => {
                   <label class="flex flex-col items-center gap-1"><input type="checkbox" disabled :checked="store.skillsAndOther.arrestHistory.hasHistory === false"> ไม่เคย<span class="text-[10px]">No</span></label>
                   <div class="flex flex-col flex-1">
                     <label class="flex items-center gap-1"><input type="checkbox" disabled :checked="store.skillsAndOther.arrestHistory.hasHistory === true"> เคย เพราะ<span class="text-[10px] ml-1">Yes</span></label>
-                    <span class="border-b border-dotted border-black w-full mt-4 h-5 font-medium text-blue-800">{{ store.skillsAndOther.arrestHistory.hasHistory ? store.skillsAndOther.arrestHistory.reason : '' }}</span>
+                    <span class="border-b border-dotted border-black w-full mt-1.5 h-3 font-medium text-blue-800">{{ store.skillsAndOther.arrestHistory.hasHistory ? store.skillsAndOther.arrestHistory.reason : '' }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 3 -->
-            <div class="border-b border-black p-2 flex items-center justify-between">
+            <div class="border-b border-black p-1 flex items-center justify-between">
               <div class="w-[45%]">
                 <div>5. เคยถูกให้ออกจากงานหรือเลิกจ้างหรือไม่</div>
                 <div class="text-[10px] mt-1">Have you ever been discharged from employment for any reason? (reason/เหตุผล)</div>
@@ -909,14 +877,14 @@ const printDocument = () => {
                   <label class="flex flex-col items-center gap-1"><input type="checkbox" disabled :checked="store.skillsAndOther.dischargeHistory.hasHistory === false"> ไม่เคย<span class="text-[10px]">No</span></label>
                   <div class="flex flex-col flex-1">
                     <label class="flex items-center gap-1"><input type="checkbox" disabled :checked="store.skillsAndOther.dischargeHistory.hasHistory === true"> เคย เพราะ<span class="text-[10px] ml-1">Yes</span></label>
-                    <span class="border-b border-dotted border-black w-full mt-4 h-5 font-medium text-blue-800">{{ store.skillsAndOther.dischargeHistory.hasHistory ? store.skillsAndOther.dischargeHistory.reason : '' }}</span>
+                    <span class="border-b border-dotted border-black w-full mt-1.5 h-3 font-medium text-blue-800">{{ store.skillsAndOther.dischargeHistory.hasHistory ? store.skillsAndOther.dischargeHistory.reason : '' }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 4 -->
-            <div class="border-b border-black p-2 flex items-center justify-between">
+            <div class="border-b border-black p-1 flex items-center justify-between">
               <div class="w-[45%]">
                 <div>6. ท่านมีเพื่อนหรือญาติที่ทำงานที่บริษัทนี้หรือไม่</div>
                 <div class="text-[10px] mt-1">Have you any friend or relative employed here? (Specify/ระบุ)</div>
@@ -926,7 +894,7 @@ const printDocument = () => {
                   <label class="flex flex-col items-center gap-1"><input type="checkbox" disabled :checked="store.skillsAndOther.friendsInCompany.hasFriends === false"> ไม่มี<span class="text-[10px]">No</span></label>
                   <div class="flex flex-col flex-1">
                     <label class="flex items-center gap-1"><input type="checkbox" disabled :checked="store.skillsAndOther.friendsInCompany.hasFriends === true"> มี (ระบุ)<span class="text-[10px] ml-1">Yes</span></label>
-                    <span class="border-b border-dotted border-black w-full mt-4 h-5 font-medium text-blue-800">{{ store.skillsAndOther.friendsInCompany.hasFriends ? store.skillsAndOther.friendsInCompany.names : '' }}</span>
+                    <span class="border-b border-dotted border-black w-full mt-1.5 h-3 font-medium text-blue-800">{{ store.skillsAndOther.friendsInCompany.hasFriends ? store.skillsAndOther.friendsInCompany.names : '' }}</span>
                   </div>
                 </div>
               </div>
@@ -949,29 +917,19 @@ const printDocument = () => {
             </div>
 
             <!-- Row 6 -->
-            <div class="p-2 flex gap-2 h-10 items-start">
+            <div class="p-2 flex gap-2 h-6 items-start">
               <span>8. ท่านมีหรือชอบงานอดิเรกอะไรบ้าง/What are your hobbies or interests?</span>
               <span class="font-medium text-blue-800 flex-1 ml-2">{{ store.skillsAndOther.hobbies }}</span>
             </div>
           </div>
         </div>
-      </div>
-      <!-- Footer Page 4 -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        6/13
-      </div>
-    </div>
 
-
-    <!-- PAGE 5 -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
         <!-- 8. Further Information -->
         <div class="text-[11.5px]">
           <div class="font-bold text-[12.5px] mb-1">8. ข้อมูลเพิ่มเติม FURTHER INFORMATION</div>
           <div class="text-[11px] mb-1">ข้อมูลเพิ่มเติมซึ่งท่านคิดว่าจะเป็นประโยชน์ต่อการสมัครงาน/Further information which you considered to be beneficial to application.</div>
-          <div class="border-b border-dotted border-black mt-6 w-full font-medium text-blue-800 h-5">{{ store.skillsAndOther.furtherInformation || '' }}</div>
-          <div class="border-b border-dotted border-black mt-6 w-full h-5"></div>
+          <div class="border-b border-dotted border-black mt-1 w-full font-medium text-blue-800 h-5">{{ store.skillsAndOther.furtherInformation || '' }}</div>
+          <div class="border-b border-dotted border-black mt-1 w-full h-5"></div>
         </div>
 
         <!-- 9. Personal Reference -->
@@ -981,126 +939,96 @@ const printDocument = () => {
           <table class="w-full border-collapse border-[1.5px] border-black text-center mt-2">
             <thead class="bg-gray-50">
               <tr>
-                <th class="border border-black px-2 py-1.5 w-[25%] font-normal">ชื่อ-นามสกุล/Name-<br><span class="text-[10px]">Surname</span></th>
-                <th class="border border-black px-2 py-1.5 w-[30%] font-normal">ที่อยู่/สถานที่ทำงาน/Address/Office<br><span class="text-[10px]">Address</span></th>
-                <th class="border border-black px-2 py-1.5 w-[15%] font-normal">ตำแหน่ง/Position</th>
-                <th class="border border-black px-2 py-1.5 w-[15%] font-normal">โทรศัพท์/<br><span class="text-[10px]">Telephone</span></th>
-                <th class="border border-black px-2 py-1.5 w-[15%] font-normal">ความสัมพันธ์/Relations</th>
+                <th class="border border-black px-2 py-1 w-[25%] font-normal">ชื่อ-นามสกุล/Name-<br><span class="text-[10px]">Surname</span></th>
+                <th class="border border-black px-2 py-1 w-[30%] font-normal">ที่อยู่/สถานที่ทำงาน/Address/Office<br><span class="text-[10px]">Address</span></th>
+                <th class="border border-black px-2 py-1 w-[15%] font-normal">ตำแหน่ง/Position</th>
+                <th class="border border-black px-2 py-1 w-[15%] font-normal">โทรศัพท์/<br><span class="text-[10px]">Telephone</span></th>
+                <th class="border border-black px-2 py-1 w-[15%] font-normal">ความสัมพันธ์/Relations</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="border border-black px-2 py-1.5 text-left"><span class="mr-2">1.</span><span class="font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.address || '' }}</td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.position || '' }}</td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.phone || '' }}</td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.relation || '' }}</td>
+                <td class="border border-black px-2 py-1 text-left"><span class="mr-2">1.</span><span class="font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.address || '' }}</td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.position || '' }}</td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[0]?.relation || '' }}</td>
               </tr>
               <tr>
-                <td class="border border-black px-2 py-1.5 text-left"><span class="mr-2">2.</span><span class="font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.name || '' }}</span></td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.address || '' }}</td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.position || '' }}</td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.phone || '' }}</td>
-                <td class="border border-black px-2 py-1.5 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.relation || '' }}</td>
+                <td class="border border-black px-2 py-1 text-left"><span class="mr-2">2.</span><span class="font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.name || '' }}</span></td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.address || '' }}</td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.position || '' }}</td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.phone || '' }}</td>
+                <td class="border border-black px-2 py-1 font-medium text-blue-800">{{ store.skillsAndOther.referencePersons[1]?.relation || '' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-      <!-- Footer Page 5 -->
-      <div class="flex justify-end text-[10.5px] mt-6">
-        7/13
+      <!-- Footer Page 3 -->
+      <div class="flex justify-end text-[10.5px] mt-2">
+        3/8
       </div>
     </div>
 
 
-    <!-- PAGE 6: PDPA PART 1 -->
+    <!-- PAGE 6: PDPA PART A (sections 1-3) -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="border-[1.5px] border-blue-800 text-blue-800 text-center font-bold p-3 mb-6 text-[13px]">
+      <div class="content flex-1">
+        <div class="border-[1.5px] border-blue-800 text-blue-800 text-center font-bold p-1 mb-1 text-[11px]">
           “โปรดอ่านและยอมรับประกาศความเป็นส่วนตัวสำหรับ<br>
           ผู้สมัครเข้าเป็นพนักงาน ผู้สมัครเข้าฝึกงาน และผู้ฝึกงาน ผู้สมัครเข้าฝึกงาน และผู้ฝึกงาน<br>
           <u>บริษัท ยิปมั่นเทค จำกัด</u>”
         </div>
-        <div class="text-center font-bold text-[13px] mb-6">
+        <div class="text-center font-bold text-[11px] mb-1">
           ประกาศความเป็นส่วนตัว<br>
           <u>สำหรับผู้สมัครเข้าเป็นพนักงาน ผู้สมัครเข้าฝึกงาน และผู้ฝึกงาน</u>
         </div>
-        
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanPdpaHtmlPart1a"></div>
+
+        <div class="pdpa-preview-content text-[9.5px]" v-html="cleanPdpaHtmlPartA"></div>
       </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        8/13
+      <div class="flex justify-end text-[10.5px] mt-1">
+        4/8
       </div>
     </div>
 
-    <!-- PAGE 6B: PDPA PART 1B (section 3) -->
+    <!-- PAGE 7: PDPA PART B (sections 4-9) -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanPdpaHtmlPart1b"></div>
+      <div class="content flex-1">
+        <div class="pdpa-preview-content text-[9.5px]" v-html="cleanPdpaHtmlPartB"></div>
       </div>
       <div class="flex justify-end text-[10.5px] mt-6">
-        9/13
+        5/8
       </div>
     </div>
 
-    <!-- PAGE 6C: PDPA PART 1C (section 4) -->
+    <!-- PAGE 8: PDPA PART C (sections 10-12) + SIGNATURE -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanPdpaHtmlPart1c"></div>
-      </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        10/13
-      </div>
-    </div>
-
-    <!-- PAGE 7: PDPA PART 2A (sections 5-7) -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanPdpaHtmlPart2a"></div>
-      </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        11/13
-      </div>
-    </div>
-
-    <!-- PAGE 7B: PDPA PART 2B (sections 8-9) -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanPdpaHtmlPart2b"></div>
-      </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        12/13
-      </div>
-    </div>
-
-    <!-- PAGE 8: PDPA PART 3 + SIGNATURE -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="pdpa-preview-content mb-8 text-[11px]" v-html="cleanPdpaHtmlPart3"></div>
+      <div class="content flex-1">
+        <div class="pdpa-preview-content text-[9.5px]" v-html="cleanPdpaHtmlPartC"></div>
 
         <!-- Certification and Signature for PDPA -->
-        <div class="mt-4 text-[11px] break-inside-avoid text-justify font-sans text-black">
-          <p class="mb-4">ท่านสามารถใช้สิทธิตามกฎหมายได้ที่ฝ่ายทรัพยากรบุคคล <span class="bg-yellow-200">บริษัท ยิปมั่นเทค จำกัด</span></p>
-          
-          <div class="mb-4">
+        <div class="mt-2 text-[10px] break-inside-avoid text-justify font-sans text-black">
+          <p class="mb-2">ท่านสามารถใช้สิทธิตามกฎหมายได้ที่ฝ่ายทรัพยากรบุคคล <span class="bg-yellow-200">บริษัท ยิปมั่นเทค จำกัด</span></p>
+
+          <div class="mb-2">
             <div class="font-bold">12. ข้อมูลเกี่ยวกับผู้ควบคุมข้อมูลส่วนบุคคลและเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล</div>
             <div class="ml-4">ผู้ควบคุมข้อมูลส่วนบุคคล : <span class="bg-yellow-200">บริษัท ยิปมั่นเทค จำกัด</span></div>
             <div class="ml-4">สถานที่ติดต่อ : <span class="bg-yellow-200">เลขที่ 9/9 อาคารแอทสาทร ชั้น 16 โซนเอ ถนนสาทรใต้ แขวงยานนาวา เขตสาทร กรุงเทพ 10120</span></div>
           </div>
 
-          <p class="mb-6">กรณีที่ท่านมีข้อสอบถามเกี่ยวกับการคุ้มครองข้อมูลส่วนบุคคล โปรดติดต่อเบอร์ 02-335-5555 / 02-335-5777 หรือ e-mail: ....................</p>
-          
-          <div class="flex items-end gap-2 mb-2">
+          <p class="mb-3">กรณีที่ท่านมีข้อสอบถามเกี่ยวกับการคุ้มครองข้อมูลส่วนบุคคล โปรดติดต่อเบอร์ 02-335-5555 / 02-335-5777 หรือ e-mail: ....................</p>
+
+          <div class="flex items-end gap-2 mb-1">
             <span class="whitespace-nowrap font-bold">ข้าพเจ้า</span>
             <span class="border-b border-dotted border-black flex-1 text-center text-blue-800 font-medium pb-1">{{ store.personalInfo.namePrefix || '' }} {{ store.personalInfo.firstName || '' }} {{ store.personalInfo.lastName || '' }}</span>
             <span class="whitespace-nowrap font-bold">ยอมรับประกาศความเป็นส่วนตัวสำหรับผู้สมัครเข้าเป็นพนักงาน ผู้สมัครเข้าฝึกงาน และผู้ฝึกงาน ผู้สมัครเข้าฝึกงาน และผู้ฝึกงาน</span>
           </div>
-          <div class="mb-8 font-bold">บริษัท ยิปมั่นเทค จำกัด</div>
-          
-          <div class="flex justify-center mt-6">
-            <div class="flex flex-col text-[11px] font-bold w-[70%]">
-              <div class="flex items-end mb-4">
+          <div class="mb-4 font-bold">บริษัท ยิปมั่นเทค จำกัด</div>
+
+          <div class="flex justify-center mt-3">
+            <div class="flex flex-col text-[10px] font-bold w-[70%]">
+              <div class="flex items-end mb-2">
                 <span class="mr-2">ลงชื่อ/Signature</span>
                 <div class="relative flex-1 border-b border-dotted border-black flex justify-center h-6">
                   <img v-if="store.pdpaSignature" :src="store.pdpaSignature" class="max-h-12 absolute bottom-1" />
@@ -1117,52 +1045,43 @@ const printDocument = () => {
       </div>
 
       <div class="flex justify-end text-[10.5px] mt-6">
-        13/13
+        6/8
       </div>
     </div>
 
-    <!-- PAGE 9: CONSENT FORM PART 1 -->
+    <!-- PAGE 9: CONSENT FORM PART A (sections 1-2) -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <div class="text-center font-bold text-[13px] mb-4">
+      <div class="content flex-1">
+        <div class="text-center font-bold text-[12.5px] mb-2">
           หนังสือให้ความยินยอมเก็บรวบรวม ใช้ และ/หรือเปิดเผยข้อมูลส่วนบุคคล
         </div>
-        <div class="text-[12px] flex flex-wrap gap-2 mb-4 leading-relaxed">
+        <div class="text-[11px] flex flex-wrap gap-2 mb-2 leading-snug">
           <span class="mr-2">ข้าพเจ้า</span>
           <span class="border-b border-dotted border-black flex-1 text-center font-medium text-blue-800">{{ store.personalInfo.namePrefix || '' }} {{ store.personalInfo.firstName || '' }} {{ store.personalInfo.lastName || '' }}</span>
           <span>ซึ่งเป็นผู้สมัครเข้าเป็นพนักงาน ผู้สมัครเข้าฝึกงาน / ผู้ฝึกงาน ของ <span class="bg-yellow-200 font-bold px-1">บริษัท ยิปมั่นเทค จำกัด</span></span>
         </div>
-        <div class="text-[12px] indent-8 mb-6 leading-relaxed">
+        <div class="text-[11px] indent-8 mb-2 leading-snug">
           ให้บริษัทเก็บรวบรวม ใช้ หรือเปิดเผยข้อมูลส่วนบุคคลของข้าพเจ้าที่มีอยู่ กับ <span class="bg-yellow-200 font-bold px-1">บริษัท ยิปมั่นเทค จำกัด</span> ดังที่ปรากฏตามประกาศความเป็นส่วนตัวสำหรับผู้สมัครเข้าเป็นพนักงาน ผู้สมัครเข้าฝึกงาน และผู้ฝึกงาน ของ <span class="bg-yellow-200 font-bold px-1">บริษัท ยิปมั่นเทค จำกัด</span> และ ข้อกำหนด และเงื่อนไข ดังต่อไปนี้
         </div>
-        
-        <div class="font-bold text-[12px] mb-2">ข้อกำหนดและเงื่อนไข</div>
-        
-        <!-- Rendering Consent HTML Part 1a -->
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanConsentHtmlPart1a"></div>
-      </div>
 
+        <div class="font-bold text-[11px] mb-1">ข้อกำหนดและเงื่อนไข</div>
+
+        <div class="pdpa-preview-content text-[9.5px]" v-html="cleanConsentHtmlPartA"></div>
+      </div>
+      <div class="flex justify-end text-[10.5px] mt-6">
+        7/8
+      </div>
     </div>
 
-    <!-- PAGE 9B: CONSENT FORM PART 1B -->
+    <!-- PAGE 10: CONSENT FORM PART B (section 3) + SIGNATURE -->
     <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <!-- Rendering Consent HTML Part 1b -->
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanConsentHtmlPart1b"></div>
-      </div>
+      <div class="content flex-1">
+        <div class="pdpa-preview-content text-[9.5px]" v-html="cleanConsentHtmlPartB"></div>
 
-    </div>
-
-    <!-- PAGE 10: CONSENT FORM PART 2 -->
-    <div class="page bg-white px-[1.5cm] pt-[1.5cm] pb-[2cm] w-[21cm] min-h-[29.5cm] mx-auto shadow-2xl mb-8 print:shadow-none print:mb-0 print:break-after-page text-[12px] leading-snug font-sans text-black relative flex flex-col justify-between">
-      <div class="content flex-1 space-y-4">
-        <!-- Rendering Consent HTML Part 2 -->
-        <div class="pdpa-preview-content mb-12 text-[11px]" v-html="cleanConsentHtmlPart2"></div>
-        
         <!-- Signature block for Consent -->
-        <div class="flex justify-center mt-12 mb-8">
-          <div class="flex flex-col text-[11px] font-bold w-[60%] items-center">
-            <div class="flex items-end mb-4 w-full">
+        <div class="flex justify-center mt-8 mb-4">
+          <div class="flex flex-col text-[10.5px] font-bold w-[60%] items-center">
+            <div class="flex items-end mb-3 w-full">
               <span class="mr-2">ลงชื่อ</span>
               <div class="relative flex-1 border-b border-dotted border-black flex justify-center h-6">
                 <img v-if="store.pdpaSignature" :src="store.pdpaSignature" class="max-h-12 absolute bottom-1" />
@@ -1176,7 +1095,9 @@ const printDocument = () => {
           </div>
         </div>
       </div>
-      
+      <div class="flex justify-end text-[10.5px] mt-6">
+        8/8
+      </div>
     </div>
 
   </div>
@@ -1186,27 +1107,27 @@ const printDocument = () => {
 /* Scoped styles to format the imported PDPA html as a plain document */
 :deep(.pdpa-preview-content) {
   font-family: 'Sarabun', 'SarabunIT', sans-serif;
-  line-height: 1.6;
+  line-height: 1.25;
   text-align: justify;
 }
 :deep(.pdpa-preview-content h3) {
-  font-size: 11.5px;
+  font-size: 10px;
   font-weight: bold;
-  margin-top: 14px;
-  margin-bottom: 6px;
+  margin-top: 6px;
+  margin-bottom: 2px;
 }
 :deep(.pdpa-preview-content p), :deep(.pdpa-preview-content div) {
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 :deep(.pdpa-preview-content > p), :deep(.pdpa-preview-content > div) {
-  text-indent: 24px;
+  text-indent: 20px;
 }
 :deep(.pdpa-preview-content ul) {
-  margin-bottom: 6px;
-  padding-left: 24px;
+  margin-bottom: 3px;
+  padding-left: 20px;
 }
 :deep(.pdpa-preview-content li) {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   display: flex;
 }
 

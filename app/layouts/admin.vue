@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import NotificationBell from '~/components/admin/NotificationBell.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+// Mobile: sidebar is an off-canvas drawer.
+const sidebarOpen = ref(false)
+watch(() => route.fullPath, () => { sidebarOpen.value = false })
 
 const logout = async () => {
   await authStore.logout()
@@ -14,8 +19,18 @@ const logout = async () => {
 
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <!-- Mobile drawer backdrop -->
+    <div
+      v-if="sidebarOpen"
+      class="fixed inset-0 bg-slate-900/40 z-30 md:hidden"
+      @click="sidebarOpen = false"
+    ></div>
+
     <!-- Sidebar -->
-    <aside class="w-full md:w-64 bg-white border-r border-slate-200/80 text-slate-700 flex-shrink-0 flex flex-col print:hidden">
+    <aside
+      class="fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200/80 text-slate-700 flex flex-col print:hidden transition-transform duration-200 md:static md:z-auto md:w-64 md:translate-x-0 md:flex-shrink-0"
+      :class="sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'"
+    >
       <div class="h-20 flex items-center justify-center px-6 bg-white border-b border-slate-200/80">
         <img src="/Logo_GM_small.png" alt="GMT Logo" class="h-12 w-auto object-contain">
       </div>
@@ -46,6 +61,13 @@ const logout = async () => {
           <div class="flex flex-col leading-tight">
             <span class="text-sm font-medium">ข้อมูลพนักงานทั้งหมด</span>
             <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">Employees</span>
+          </div>
+        </NuxtLink>
+        <NuxtLink v-if="authStore.isHRAdmin" to="/admin/hr/employees/import" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors" active-class="!bg-gradient-to-r !from-blue-50 !to-blue-50/40 !text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          <div class="flex flex-col leading-tight">
+            <span class="text-sm font-medium">นำเข้าข้อมูลพนักงานเก่า</span>
+            <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">Import CSV</span>
           </div>
         </NuxtLink>
         <NuxtLink v-if="authStore.isHRAdmin" to="/admin/hr/it-requests" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors" active-class="!bg-gradient-to-r !from-blue-50 !to-blue-50/40 !text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100">
@@ -95,10 +117,19 @@ const logout = async () => {
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+    <main class="flex-1 flex flex-col min-w-0">
       <!-- Topbar Header -->
-      <header class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/70 flex items-center justify-between px-6 flex-shrink-0 print:hidden sticky top-0 z-10">
-        <h1 class="text-lg font-bold text-slate-800 tracking-tight capitalize">{{ $route.name?.toString().replace(/-/g, ' ') || 'Dashboard' }}</h1>
+      <header class="h-16 bg-white border-b border-slate-200/70 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 print:hidden sticky top-0 z-20 isolate">
+        <div class="flex items-center gap-2 min-w-0">
+          <button
+            @click="sidebarOpen = true"
+            class="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+            aria-label="เปิดเมนู"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <h1 class="text-lg font-bold text-slate-800 tracking-tight capitalize truncate">{{ $route.name?.toString().replace(/-/g, ' ') || 'Dashboard' }}</h1>
+        </div>
         <div class="flex items-center gap-3">
           <NuxtLink to="/" class="text-sm font-medium text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
@@ -109,8 +140,8 @@ const logout = async () => {
         </div>
       </header>
 
-      <!-- Scrollable Content -->
-      <div class="flex-1 overflow-auto p-6 print:p-0 print:bg-white print:overflow-visible">
+      <!-- Content -->
+      <div class="flex-1 p-6 print:p-0 print:bg-white">
         <slot />
       </div>
     </main>

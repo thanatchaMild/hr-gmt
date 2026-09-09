@@ -4,9 +4,9 @@ definePageMeta({
 })
 import RequirePermission from '~/components/admin/RequirePermission.vue'
 import EmployeeProfileTabs from '~/components/admin/EmployeeProfileTabs.vue'
-import ITRequestModal from '~/components/admin/ITRequestModal.vue'
 import { DEPARTMENTS } from '~/utils/departments'
 import { BRANCHES } from '~/utils/branches'
+import { hireTypeLabel, hireTypeDateField } from '~/utils/hireType'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -42,22 +42,28 @@ watch(application, (val) => {
 const isHrDataSaved = ref(false)
 const isSaving = ref(false)
 
+const dateField = computed(() => hireTypeDateField(application.value?.hireType ?? application.value?.employeeType))
+
+// Toast แจ้งเตือนแบบ in-app แทน alert() ของ browser
+const toast = reactive<{ show: boolean; message: string; type: 'success' | 'error' }>({
+  show: false,
+  message: '',
+  type: 'success'
+})
+let toastTimer: ReturnType<typeof setTimeout> | undefined
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  toast.message = message
+  toast.type = type
+  toast.show = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.show = false }, 3500)
+}
+
+onBeforeUnmount(() => { if (toastTimer) clearTimeout(toastTimer) })
+
 const saveHrData = async () => {
   if (!application.value) return
-  const isMonthly = application.value.employeeType === 'MONTHLY'
-
-  if (!hrData.employeeCode || !hrData.department || !hrData.branch || !hrData.manager || !hrData.startDate) {
-    alert('กรุณากรอกข้อมูลรหัสพนักงาน แผนก สาขา หัวหน้างาน และวันเริ่มงานให้ครบถ้วน')
-    return
-  }
-  if (isMonthly && !hrData.probationDate) {
-    alert('กรุณาระบุวันที่ผ่านทดลองงาน')
-    return
-  }
-  if (!isMonthly && !hrData.contractEndDate) {
-    alert('กรุณาระบุวันหมดสัญญา')
-    return
-  }
 
   isSaving.value = true
   try {
@@ -69,35 +75,21 @@ const saveHrData = async () => {
         branch: hrData.branch,
         managerName: hrData.manager,
         startDate: hrData.startDate,
-        probationDate: isMonthly ? hrData.probationDate : undefined,
-        contractEndDate: !isMonthly ? hrData.contractEndDate : undefined,
+        probationDate: dateField.value === 'probation' ? hrData.probationDate : undefined,
+        contractEndDate: dateField.value === 'contract' ? hrData.contractEndDate : undefined,
         status: 'APPROVED'
       }
     })
     isHrDataSaved.value = true
     await refresh()
-    alert('บันทึกข้อมูลแผนกและหัวหน้างานสำเร็จ')
+    showToast('บันทึกข้อมูลพนักงานเรียบร้อยแล้ว', 'success')
   } catch {
-    alert('บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง')
+    showToast('บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'error')
   } finally {
     isSaving.value = false
   }
 }
 
-const showITModal = ref(false)
-
-const itPresetEmployee = computed(() => application.value ? {
-  id: application.value.id,
-  firstName: application.value.firstName,
-  lastName: application.value.lastName,
-  employeeType: application.value.employeeType,
-  department: application.value.department,
-  startDate: application.value.startDate
-} : null)
-
-const onITRequestSubmitted = () => {
-  router.push('/admin/hr/applications')
-}
 </script>
 
 <template>
@@ -119,7 +111,7 @@ const onITRequestSubmitted = () => {
             <div>
               <h2 class="text-xl font-bold text-slate-800">{{ application.firstName }} {{ application.lastName }}</h2>
               <p class="text-sm text-slate-500 mt-0.5">
-                {{ application.employeeType === 'MONTHLY' ? 'พนักงานรายเดือน' : 'พนักงานรายวัน' }} · ส่งใบสมัครเมื่อ {{ application.createdAt?.slice(0, 10) }}
+                {{ hireTypeLabel(application.hireType ?? application.employeeType) }} · ส่งใบสมัครเมื่อ {{ application.createdAt?.slice(0, 10) }}
               </p>
             </div>
           </div>
@@ -129,10 +121,10 @@ const onITRequestSubmitted = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
             ดูใบสมัครงาน
           </NuxtLink>
-          <button @click="showITModal = true" class="px-4 py-2 bg-purple-600 border border-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 shadow-sm flex items-center gap-2">
+          <NuxtLink :to="`/admin/hr/it-requests/new?employeeId=${applicationId}`" class="px-4 py-2 bg-purple-600 border border-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 shadow-sm flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             ขออุปกรณ์ IT
-          </button>
+          </NuxtLink>
         </div>
       </div>
 
@@ -163,37 +155,37 @@ const onITRequestSubmitted = () => {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">รหัสพนักงาน <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">รหัสพนักงาน</label>
             <input v-model="hrData.employeeCode" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none" placeholder="ระบุรหัสพนักงาน...">
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">แผนก <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">แผนก</label>
             <select v-model="hrData.department" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none">
               <option value="" disabled>-- เลือกแผนก --</option>
               <option v-for="dept in DEPARTMENTS" :key="dept" :value="dept">{{ dept }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">สาขา <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">สาขา</label>
             <select v-model="hrData.branch" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none">
               <option value="" disabled>-- เลือกสาขา --</option>
               <option v-for="branch in BRANCHES" :key="branch" :value="branch">{{ branch }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">หัวหน้างาน <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">หัวหน้างาน</label>
             <input v-model="hrData.manager" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none" placeholder="ระบุชื่อหัวหน้า...">
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">เริ่มงาน <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">เริ่มงาน</label>
             <input v-model="hrData.startDate" type="date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none">
           </div>
-          <div v-if="application.employeeType === 'MONTHLY'">
-            <label class="block text-sm font-medium text-slate-700 mb-1">ผ่านทดลองงาน <span class="text-red-500">*</span></label>
+          <div v-if="dateField === 'probation'">
+            <label class="block text-sm font-medium text-slate-700 mb-1">ผ่านทดลองงาน</label>
             <input v-model="hrData.probationDate" type="date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none">
           </div>
-          <div v-else>
-            <label class="block text-sm font-medium text-slate-700 mb-1">วันหมดสัญญา <span class="text-red-500">*</span></label>
+          <div v-else-if="dateField === 'contract'">
+            <label class="block text-sm font-medium text-slate-700 mb-1">วันหมดสัญญา</label>
             <input v-model="hrData.contractEndDate" type="date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none">
           </div>
         </div>
@@ -205,17 +197,52 @@ const onITRequestSubmitted = () => {
         </div>
       </div>
 
-      <!-- Priority 2: full applicant profile, for reference -->
-      <EmployeeProfileTabs :form-data="application.formData" :documents="application.documents" :it-requests="application.itRequests" />
+      <!-- Priority 2: full applicant profile, editable inline -->
+      <EmployeeProfileTabs
+        :form-data="application.formData"
+        :documents="application.documents"
+        :it-requests="application.itRequests"
+        :employee="application"
+        editable
+        @saved="refresh"
+      />
     </div>
 
-    <!-- IT Request Modal -->
-    <ITRequestModal
-      v-if="showITModal"
-      :preset-employee="itPresetEmployee"
-      :preset-approver="application?.managerName || ''"
-      @close="showITModal = false"
-      @submitted="onITRequestSubmitted"
-    />
+    <!-- Toast แจ้งเตือน -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 translate-y-3 sm:translate-y-0 sm:translate-x-3"
+        enter-to-class="opacity-100 translate-y-0 sm:translate-x-0"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 translate-y-0 sm:translate-x-0"
+        leave-to-class="opacity-0 translate-y-3 sm:translate-y-0 sm:translate-x-3"
+      >
+        <div
+          v-if="toast.show"
+          class="fixed z-[60] bottom-5 right-5 left-5 sm:left-auto sm:max-w-sm"
+        >
+          <div
+            class="flex items-start gap-3 rounded-xl border bg-white px-4 py-3 shadow-lg"
+            :class="toast.type === 'success' ? 'border-green-200' : 'border-red-200'"
+          >
+            <div
+              class="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
+              :class="toast.type === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+            >
+              <svg v-if="toast.type === 'success'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+              <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v3m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
+            </div>
+            <p class="flex-1 pt-0.5 text-sm font-medium text-slate-700">{{ toast.message }}</p>
+            <button
+              @click="toast.show = false"
+              class="mt-0.5 flex-shrink-0 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </RequirePermission>
 </template>

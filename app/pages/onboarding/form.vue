@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOnboardingStore } from '~/stores/onboarding'
+import { HIRE_TYPES } from '~/utils/hireType'
 import AppButton from '~/components/onboarding/ui/AppButton.vue'
 
 import StepPersonal from '~/components/onboarding/StepPersonal.vue'
@@ -90,29 +91,18 @@ const goToPreview = () => {
       </div>
     </div>
 
-    <!-- Employee Type Selection -->
+    <!-- Employment type (สถานะการจ้าง) -->
     <div v-if="currentStep === 1" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 mb-6">
-      <label class="block text-sm font-semibold text-slate-700 mb-3">ประเภทพนักงานที่สมัคร <span class="text-red-500">*</span></label>
-      <div class="flex flex-col sm:flex-row gap-3">
+      <label class="block text-sm font-semibold text-slate-700 mb-3">สถานะการจ้าง <span class="text-red-500">*</span></label>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <label
-          class="flex-1 border rounded-xl p-4 cursor-pointer transition-colors flex items-center gap-3"
-          :class="store.employeeType === 'DAILY' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-slate-200 hover:bg-slate-50'"
+          v-for="opt in HIRE_TYPES"
+          :key="opt.code"
+          class="border rounded-xl p-4 cursor-pointer transition-colors flex items-center gap-3"
+          :class="store.hireType === opt.code ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-slate-200 hover:bg-slate-50'"
         >
-          <input type="radio" v-model="store.employeeType" value="DAILY" class="w-5 h-5 text-primary-600 focus:ring-2 focus:ring-primary-500/30">
-          <div class="flex flex-col">
-            <span class="font-bold text-slate-900">พนักงานรายวัน</span>
-            <span class="text-sm text-slate-500">Daily Employee</span>
-          </div>
-        </label>
-        <label
-          class="flex-1 border rounded-xl p-4 cursor-pointer transition-colors flex items-center gap-3"
-          :class="store.employeeType === 'MONTHLY' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-slate-200 hover:bg-slate-50'"
-        >
-          <input type="radio" v-model="store.employeeType" value="MONTHLY" class="w-5 h-5 text-primary-600 focus:ring-2 focus:ring-primary-500/30">
-          <div class="flex flex-col">
-            <span class="font-bold text-slate-900">พนักงานรายเดือน</span>
-            <span class="text-sm text-slate-500">Monthly Employee</span>
-          </div>
+          <input type="radio" v-model="store.hireType" :value="opt.code" class="w-5 h-5 text-primary-600 focus:ring-2 focus:ring-primary-500/30">
+          <span class="font-bold text-slate-900">{{ opt.label }}</span>
         </label>
       </div>
     </div>

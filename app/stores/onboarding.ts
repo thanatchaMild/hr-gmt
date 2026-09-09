@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { deriveEmployeeType, type HireType } from '~/utils/hireType'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
-  // 1. Employee Type & Access
-  const employeeType = ref<'DAILY' | 'MONTHLY' | null>(null)
+  // 1. Employment type (สถานะการจ้าง) & access. employeeType is derived for legacy consumers.
+  const hireType = ref<HireType | null>(null)
+  const employeeType = computed(() => (hireType.value ? deriveEmployeeType(hireType.value) : null))
   const token = ref<string | null>(null)
   const employeeCode = ref<string | null>(null)
 
@@ -176,7 +178,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   // Populates the store from an already-submitted employee record, for HR editing.
   function loadFromEmployee(employee: any) {
     const data = employee.formData || {}
-    employeeType.value = employee.employeeType
+    hireType.value = employee.hireType ?? employee.employeeType
     if (data.personalInfo) Object.assign(personalInfo.value, data.personalInfo)
     if (data.contactInfo) Object.assign(contactInfo.value, data.contactInfo)
     if (data.familyInfo) Object.assign(familyInfo.value, data.familyInfo)
@@ -204,7 +206,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   }
 
   function resetForm() {
-    employeeType.value = null
+    hireType.value = null
     pdpaConsent.value = false
     pdpaConsentDate.value = null
     pdpaSignature.value = null
@@ -239,7 +241,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       body: {
         token: token.value,
         employeeCode: employeeCode.value,
-        employeeType: employeeType.value,
+        hireType: hireType.value,
         pdpaConsent: pdpaConsent.value,
         pdpaConsentDate: pdpaConsentDate.value,
         personalInfo: personalInfo.value,
@@ -259,6 +261,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   }
 
   return {
+    hireType,
     employeeType,
     token,
     employeeCode,

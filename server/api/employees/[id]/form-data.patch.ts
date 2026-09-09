@@ -1,6 +1,6 @@
 interface UpdateFormDataPayload {
-  personalInfo: { firstName: string; lastName: string }
-  contactInfo: { email: string; mobilePhone: string }
+  personalInfo?: { firstName?: string; lastName?: string }
+  contactInfo?: { email?: string; mobilePhone?: string }
   familyInfo: unknown
   educationHistory: unknown
   trainingHistory: unknown
@@ -15,17 +15,14 @@ export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   const body = await readBody<UpdateFormDataPayload>(event)
 
-  if (!body?.personalInfo?.firstName || !body.contactInfo?.email) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing required fields' })
-  }
+  // HR edit form: no field is mandatory — accept whatever is submitted.
 
   const existing = await prisma.employee.findUnique({ where: { id } })
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Employee not found' })
   }
 
-  const scopeType = scopeEmployeeTypeFilter(user)
-  if (scopeType && existing.employeeType !== scopeType) {
+  if (isOutOfHireTypeScope(user, existing)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   }
 
@@ -37,10 +34,10 @@ export default defineEventHandler(async (event) => {
   const employee = await prisma.employee.update({
     where: { id },
     data: {
-      firstName: personalInfo.firstName,
-      lastName: personalInfo.lastName,
-      email: contactInfo.email,
-      phone: contactInfo.mobilePhone,
+      firstName: personalInfo?.firstName ?? existing.firstName,
+      lastName: personalInfo?.lastName ?? existing.lastName,
+      email: contactInfo?.email ?? existing.email,
+      phone: contactInfo?.mobilePhone ?? existing.phone,
       formData: JSON.stringify({
         personalInfo, contactInfo, familyInfo, educationHistory,
         trainingHistory, workHistory, skillsAndOther, sensitiveInfo

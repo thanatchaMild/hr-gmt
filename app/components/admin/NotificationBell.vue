@@ -3,7 +3,8 @@ import { useAuthStore } from '~/stores/auth'
 
 interface EmployeeAlert {
   id: string
-  type: 'PROBATION_WARNING' | 'CONTRACT_WARNING'
+  type: 'PROBATION_WARNING' | 'CONTRACT_WARNING' | 'TENURE_MILESTONE'
+  severity?: 'info' | 'warning' | 'urgent' | 'overdue'
   message: string
   employeeId: string
   createdAt: string
@@ -12,7 +13,7 @@ interface EmployeeAlert {
 interface ITRequestAlert {
   id: string
   employeeName: string
-  type: 'ONBOARDING' | 'OFFBOARDING'
+  type: 'ONBOARDING' | 'OFFBOARDING' | 'ASSET_REQUEST'
   createdAt: string
 }
 
@@ -49,18 +50,25 @@ const handleClickOutside = (e: MouseEvent) => {
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
-const alertMeta = (type: EmployeeAlert['type']) => {
-  if (type === 'PROBATION_WARNING') {
-    return { color: 'text-amber-600 bg-amber-50', label: 'ใกล้ผ่านโปร' }
+const alertMeta = (alert: EmployeeAlert) => {
+  if (alert.type === 'TENURE_MILESTONE') {
+    return { color: 'text-indigo-600 bg-indigo-50', label: 'อายุงานครบกำหนด' }
   }
-  return { color: 'text-rose-600 bg-rose-50', label: 'ใกล้หมดสัญญา' }
+  const baseLabel = alert.type === 'PROBATION_WARNING' ? 'ทดลองงาน' : 'สัญญาจ้าง'
+  if (alert.severity === 'overdue') return { color: 'text-rose-700 bg-rose-100', label: `${baseLabel} • เลยกำหนด` }
+  if (alert.severity === 'urgent') return { color: 'text-rose-600 bg-rose-50', label: `${baseLabel} • เร่งด่วน` }
+  if (alert.severity === 'warning') return { color: 'text-amber-600 bg-amber-50', label: `${baseLabel} • ใกล้ครบ` }
+  return { color: 'text-slate-600 bg-slate-100', label: `${baseLabel} • แจ้งล่วงหน้า` }
 }
 
 const itRequestMeta = (type: ITRequestAlert['type']) => {
   if (type === 'OFFBOARDING') {
     return { color: 'text-rose-600 bg-rose-50', label: 'คำขอปิดสิทธิ์ (Offboarding)' }
   }
-  return { color: 'text-purple-600 bg-purple-50', label: 'คำขออุปกรณ์ใหม่ (Onboarding)' }
+  if (type === 'ONBOARDING') {
+    return { color: 'text-purple-600 bg-purple-50', label: 'คำขออุปกรณ์พนักงานใหม่' }
+  }
+  return { color: 'text-purple-600 bg-purple-50', label: 'คำขอทรัพย์สิน IT' }
 }
 </script>
 
@@ -97,11 +105,11 @@ const itRequestMeta = (type: ITRequestAlert['type']) => {
             @click="isOpen = false"
             class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
           >
-            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="alertMeta(alert.type).color">
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="alertMeta(alert).color">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </span>
             <div class="min-w-0">
-              <p class="text-xs font-semibold" :class="alertMeta(alert.type).color.split(' ')[0]">{{ alertMeta(alert.type).label }}</p>
+              <p class="text-xs font-semibold" :class="alertMeta(alert).color.split(' ')[0]">{{ alertMeta(alert).label }}</p>
               <p class="text-sm text-slate-700 mt-0.5 leading-snug">{{ alert.message }}</p>
             </div>
           </NuxtLink>

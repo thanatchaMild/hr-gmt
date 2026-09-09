@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Employee not found' })
   }
 
-  const scopeType = scopeEmployeeTypeFilter(user)
-  if (scopeType && existing.employeeType !== scopeType) {
+  if (isOutOfHireTypeScope(user, existing)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   }
 

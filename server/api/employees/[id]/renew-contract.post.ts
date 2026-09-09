@@ -16,12 +16,11 @@ export default defineEventHandler(async (event) => {
   if (!employee) {
     throw createError({ statusCode: 404, statusMessage: 'Employee not found' })
   }
-  if (employee.employeeType !== 'DAILY') {
-    throw createError({ statusCode: 400, statusMessage: 'Only daily employees have renewable contracts' })
+  if (hireTypeDateField(employee.hireType ?? employee.employeeType) !== 'contract') {
+    throw createError({ statusCode: 400, statusMessage: 'พนักงานประเภทนี้ไม่มีสัญญาจ้างที่ต่ออายุได้' })
   }
 
-  const scopeType = scopeEmployeeTypeFilter(user)
-  if (scopeType && employee.employeeType !== scopeType) {
+  if (isOutOfHireTypeScope(user, employee)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   }
 

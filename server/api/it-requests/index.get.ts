@@ -13,7 +13,16 @@ export default defineEventHandler(async (event) => {
     orderBy: { createdAt: 'desc' }
   })
 
+  const safeParse = (value: string | null, fallback: unknown) => {
+    if (!value) return fallback
+    try { return JSON.parse(value) } catch { return fallback }
+  }
+
   return {
-    requests: requests.map((r) => ({ ...r, requestedItems: JSON.parse(r.requestedItems) }))
+    requests: requests.map((r) => ({
+      ...r,
+      requestedItems: safeParse(r.requestedItems, []),
+      attachments: safeParse(r.attachments, [])
+    }))
   }
 })

@@ -1,11 +1,28 @@
 <script setup lang="ts">
+import { ref, computed, provide } from 'vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
+import { formatRequestedItems, type RequestedItem } from '~/utils/itRequest'
+import { useOnboardingStore } from '~/stores/onboarding'
+import StepPersonal from '~/components/onboarding/StepPersonal.vue'
+import StepFamily from '~/components/onboarding/StepFamily.vue'
+import StepEducation from '~/components/onboarding/StepEducation.vue'
+import StepWork from '~/components/onboarding/StepWork.vue'
+import StepAbilities from '~/components/onboarding/StepAbilities.vue'
+import StepReferences from '~/components/onboarding/StepReferences.vue'
+import StepDocuments from '~/components/onboarding/StepDocuments.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   formData: any
   documents?: Array<{ id: string; documentType: string; fileUrl: string; uploadedAt: string }>
-  itRequests?: Array<{ id: string; type: string; status: string; requestedItems: string[]; notes: string | null; createdAt: string }>
-}>()
+  itRequests?: Array<{ id: string; type: string; status: string; requestedItems: Array<string | RequestedItem>; notes: string | null; createdAt: string }>
+  // Full employee record — required to enable inline editing.
+  employee?: any
+  editable?: boolean
+}>(), {
+  editable: false
+})
+
+const emit = defineEmits<{ saved: [] }>()
 
 const activeTab = ref('personal')
 
@@ -19,6 +36,17 @@ const tabs = [
   { id: 'documents', num: 7, name: 'เอกสารแนบ' },
   { id: 'itHistory', num: 8, name: 'ประวัติขอ IT' }
 ]
+
+// Which Step form drives each tab while editing. itHistory has none (read-only).
+const editComponents: Record<string, any> = {
+  personal: StepPersonal,
+  family: StepFamily,
+  education: StepEducation,
+  experience: StepWork,
+  skills: StepAbilities,
+  references: StepReferences,
+  documents: StepDocuments
+}
 
 const documentLabels: Record<string, string> = {
   idCard: 'สำเนาบัตรประชาชน',
@@ -50,10 +78,121 @@ const workHistory = computed(() => props.formData?.workHistory || [])
 const skillsAndOther = computed(() => props.formData?.skillsAndOther || {})
 const emergencyContact = computed(() => skillsAndOther.value.emergencyContacts?.[0] || {})
 const references = computed(() => skillsAndOther.value.referencePersons?.filter((r: any) => r.name) || [])
+
+/* ---------- Inline editing ---------- */
+const store = useOnboardingStore()
+// The Step forms treat no field as mandatory here, so hide the "*" marks.
+provide('hideRequiredMark', true)
+
+const canEdit = computed(() => props.editable && !!props.employee)
+const employeeId = computed(() => props.employee?.id)
+
+const isEditing = ref(false)
+const isSaving = ref(false)
+const saveError = ref('')
+const showSuccess = ref(false)
+
+function startEdit() {
+  if (!canEdit.value) return
+  store.loadFromEmployee(props.employee)
+  saveError.value = ''
+  isEditing.value = true
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  saveError.value = ''
+}
+
+async function uploadIfFile(value: File | string | null): Promise<string | null> {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  const fd = new FormData()
+  fd.append('file', value)
+  const { url } = await $fetch<{ url: string }>('/api/uploads', { method: 'POST', body: fd })
+  return url
+}
+
+async function save() {
+  if (!employeeId.value) return
+  isSaving.value = true
+  saveError.value = ''
+  try {
+    const documents = {
+      idCard: await uploadIfFile(store.documents.idCard),
+      houseRegistration: await uploadIfFile(store.documents.houseRegistration),
+      degreeCertificate: await uploadIfFile(store.documents.degreeCertificate),
+      transcript: await uploadIfFile(store.documents.transcript),
+      bankBook: await uploadIfFile(store.documents.bankBook),
+      photo: await uploadIfFile(store.documents.photo),
+      militaryDocument: await uploadIfFile(store.documents.militaryDocument)
+    }
+
+    await $fetch(`/api/employees/${employeeId.value}/form-data`, {
+      method: 'PATCH',
+      body: {
+        personalInfo: store.personalInfo,
+        contactInfo: store.contactInfo,
+        familyInfo: store.familyInfo,
+        educationHistory: store.educationHistory,
+        trainingHistory: store.trainingHistory,
+        workHistory: store.workHistory,
+        skillsAndOther: store.skillsAndOther,
+        sensitiveInfo: store.sensitiveInfo,
+        documents
+      }
+    })
+
+    isEditing.value = false
+    showSuccess.value = true
+    setTimeout(() => { showSuccess.value = false }, 2500)
+    emit('saved')
+  } catch {
+    saveError.value = 'บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+  } finally {
+    isSaving.value = false
+  }
+}
 </script>
 
 <template>
   <div class="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <!-- Toolbar -->
+    <div class="flex items-center justify-between gap-3 px-4 sm:px-6 pt-5">
+      <p class="text-sm font-semibold text-slate-500">
+        ข้อมูลจากใบสมัคร
+        <span v-if="isEditing" class="text-blue-600">· กำลังแก้ไข</span>
+      </p>
+      <div v-if="canEdit" class="flex items-center gap-2 flex-shrink-0">
+        <template v-if="isEditing">
+          <button
+            type="button"
+            class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-100 text-slate-700"
+            @click="cancelEdit"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            :disabled="isSaving"
+            class="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            @click="save"
+          >
+            {{ isSaving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+          </button>
+        </template>
+        <button
+          v-else
+          type="button"
+          class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 shadow-sm flex items-center gap-1.5"
+          @click="startEdit"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          แก้ไขข้อมูล
+        </button>
+      </div>
+    </div>
+
     <!-- Tab Navigation (Stepper style) -->
     <div class="bg-gradient-to-r from-blue-50 via-white to-blue-50 border-b border-blue-100 py-6 px-3 sm:px-6 flex items-start flex-nowrap overflow-x-auto styled-scrollbar">
       <template v-for="(tab, index) in tabs" :key="tab.id">
@@ -75,8 +214,23 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
     </div>
 
     <div class="p-6">
+      <!-- Edit mode: render the matching Step form for this tab -->
+      <template v-if="isEditing && editComponents[activeTab]">
+        <StepReferences v-if="activeTab === 'references'" :show-documents="false" />
+        <component :is="editComponents[activeTab]" v-else />
+
+        <div v-if="saveError" class="mt-4 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">{{ saveError }}</div>
+
+        <div class="flex justify-end items-center mt-8 pt-6 border-t border-slate-200 gap-3">
+          <button type="button" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-100 text-slate-700" @click="cancelEdit">ยกเลิก</button>
+          <button type="button" :disabled="isSaving" class="px-5 py-2 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors" @click="save">
+            {{ isSaving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+          </button>
+        </div>
+      </template>
+
       <!-- Personal -->
-      <div v-if="activeTab === 'personal'">
+      <div v-if="activeTab === 'personal' && !isEditing">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ข้อมูลส่วนตัว (Personal Information)</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
           <div>
@@ -103,7 +257,7 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
       </div>
 
       <!-- Family -->
-      <div v-if="activeTab === 'family'" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div v-if="activeTab === 'family' && !isEditing" class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ข้อมูลครอบครัว</h4>
           <div class="space-y-5">
@@ -142,7 +296,7 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
       </div>
 
       <!-- Education -->
-      <div v-if="activeTab === 'education'">
+      <div v-if="activeTab === 'education' && !isEditing">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ประวัติการศึกษา</h4>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
@@ -170,7 +324,7 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
       </div>
 
       <!-- Experience -->
-      <div v-if="activeTab === 'experience'">
+      <div v-if="activeTab === 'experience' && !isEditing">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ประวัติการทำงาน</h4>
         <div class="space-y-4">
           <div v-for="(exp, idx) in workHistory" :key="idx" class="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50/50">
@@ -198,7 +352,7 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
       </div>
 
       <!-- Skills -->
-      <div v-if="activeTab === 'skills'">
+      <div v-if="activeTab === 'skills' && !isEditing">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ความสามารถทั่วไป</h4>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-colors bg-slate-50/50">
@@ -219,7 +373,7 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
       </div>
 
       <!-- References -->
-      <div v-if="activeTab === 'references'">
+      <div v-if="activeTab === 'references' && !isEditing">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">บุคคลอ้างอิง</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div v-for="(ref, idx) in references" :key="idx" class="border border-slate-200 rounded-xl p-5 flex gap-4 items-start hover:border-blue-300 transition-colors">
@@ -237,7 +391,7 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
       </div>
 
       <!-- Documents -->
-      <div v-if="activeTab === 'documents'">
+      <div v-if="activeTab === 'documents' && !isEditing">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">เอกสารแนบตอนสมัครงาน</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <a v-for="doc in documents" :key="doc.id" :href="doc.fileUrl" target="_blank"
@@ -254,16 +408,17 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
         <p v-if="!documents || documents.length === 0" class="text-center text-slate-400 py-6">ไม่มีเอกสารแนบ</p>
       </div>
 
-      <!-- IT Request History -->
+      <!-- IT Request History (read-only in both modes) -->
       <div v-if="activeTab === 'itHistory'">
         <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ประวัติการขออุปกรณ์ IT</h4>
+        <p v-if="isEditing" class="text-sm text-slate-400 mb-4">แท็บนี้แก้ไขไม่ได้จากหน้านี้</p>
         <div class="space-y-3">
           <div v-for="req in itRequests" :key="req.id" class="border border-slate-200 rounded-xl p-4 hover:border-blue-300 transition-colors bg-slate-50/50">
             <div class="flex items-center justify-between gap-3 mb-2 flex-wrap">
               <span class="font-medium text-slate-900">{{ itRequestTypeLabels[req.type] || req.type }}</span>
               <StatusBadge :text="itRequestStatusMeta[req.status]?.text || req.status" :color="itRequestStatusMeta[req.status]?.color || 'yellow'" />
             </div>
-            <p class="text-sm text-slate-600">สิ่งที่ขอ: {{ req.requestedItems?.join(', ') || '-' }}</p>
+            <p class="text-sm text-slate-600">สิ่งที่ขอ: {{ formatRequestedItems(req.requestedItems) }}</p>
             <p v-if="req.notes" class="text-sm text-slate-500 mt-1">หมายเหตุ: {{ req.notes }}</p>
             <p class="text-xs text-slate-400 mt-2">วันที่ส่งคำขอ: {{ req.createdAt?.slice(0, 10) }}</p>
           </div>
@@ -271,5 +426,21 @@ const references = computed(() => skillsAndOther.value.referencePersons?.filter(
         <p v-if="!itRequests || itRequests.length === 0" class="text-center text-slate-400 py-6">ไม่มีประวัติการขออุปกรณ์ IT</p>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 translate-y-2"
+        leave-active-class="transition duration-200 ease-in"
+        leave-to-class="opacity-0 translate-y-1"
+      >
+        <div v-if="showSuccess" class="fixed top-5 right-5 z-[60] flex items-start gap-3 rounded-2xl border border-emerald-200 bg-white px-4 py-3.5 shadow-xl shadow-emerald-500/10">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+          </span>
+          <p class="text-sm font-semibold text-slate-800 pt-1.5">บันทึกการแก้ไขเรียบร้อยแล้ว</p>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
