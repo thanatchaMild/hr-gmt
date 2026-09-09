@@ -3,6 +3,7 @@ definePageMeta({
   layout: 'admin'
 })
 import RequirePermission from '~/components/admin/RequirePermission.vue'
+import AppPagination from '~/components/admin/AppPagination.vue'
 import PageHeader from '~/components/admin/PageHeader.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import EmptyState from '~/components/admin/EmptyState.vue'
@@ -27,6 +28,13 @@ const filteredCategories = computed(() => {
     cat.name.toLowerCase().includes(q) ||
     cat.code.toLowerCase().includes(q)
   )
+})
+
+const currentPage = ref(1)
+watch(searchQuery, () => { currentPage.value = 1 })
+const paginatedCategories = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return filteredCategories.value.slice(start, start + 10)
 })
 
 const isSaving = ref(false)
@@ -115,7 +123,7 @@ const deleteCategory = async (cat: CategoryRow) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="cat in filteredCategories" :key="cat.id" class="hover:bg-purple-50/30 transition-colors">
+            <tr v-for="cat in paginatedCategories" :key="cat.id" class="hover:bg-purple-50/30 transition-colors">
               <td class="px-6 py-4 font-mono text-slate-600">{{ cat.code }}</td>
               <td class="px-6 py-4 font-medium text-slate-900">{{ cat.name }}</td>
               <td class="px-6 py-4 text-center text-slate-600">{{ cat.count }}</td>
@@ -131,6 +139,7 @@ const deleteCategory = async (cat: CategoryRow) => {
         </table>
         <EmptyState v-if="filteredCategories.length === 0" message="ไม่พบข้อมูลหมวดหมู่" />
       </div>
+      <AppPagination v-model:currentPage="currentPage" :totalItems="filteredCategories.length" :itemsPerPage="10" />
     </div>
 
     <!-- Add/Edit Modal -->

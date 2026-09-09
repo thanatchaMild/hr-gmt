@@ -3,18 +3,22 @@ definePageMeta({
   layout: 'admin'
 })
 import RequirePermission from '~/components/admin/RequirePermission.vue'
+import AppPagination from '~/components/admin/AppPagination.vue'
 import PageHeader from '~/components/admin/PageHeader.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import EmptyState from '~/components/admin/EmptyState.vue'
 import Modal from '~/components/admin/Modal.vue'
 import { DEPARTMENTS } from '~/utils/departments'
 import { BRANCHES } from '~/utils/branches'
+import { HIRE_TYPES, hireTypeLabel, hireTypeDateField } from '~/utils/hireType'
+import { tenure, deadlineDateClass } from '~/utils/tenure'
 
 interface EmployeeRow {
   id: string
   firstName: string
   lastName: string
   employeeType: 'DAILY' | 'MONTHLY'
+  hireType: string | null
   status: string
   department: string | null
   branch: string | null
@@ -32,7 +36,7 @@ const employees = computed(() => data.value?.employees || [])
 const searchQuery = ref('')
 const filterDepartment = ref('')
 const filterBranch = ref('')
-const filterEmployeeType = ref('')
+const filterHireType = ref('')
 const filterProbationDateFrom = ref('')
 const filterProbationDateTo = ref('')
 const filterContractEndDateFrom = ref('')
@@ -59,7 +63,7 @@ const filteredEmployees = computed(() => {
     if (filterBranch.value && emp.branch !== filterBranch.value) {
       return false
     }
-    if (filterEmployeeType.value && emp.employeeType !== filterEmployeeType.value) {
+    if (filterHireType.value && (emp.hireType ?? emp.employeeType) !== filterHireType.value) {
       return false
     }
     if (!inRange(emp.probationDate, filterProbationDateFrom.value, filterProbationDateTo.value)) {
@@ -72,11 +76,16 @@ const filteredEmployees = computed(() => {
   })
 })
 
-function isContractSoon(contractEndDate: string | null) {
-  if (!contractEndDate) return false
-  const days = (new Date(contractEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  return days >= 0 && days <= 7
-}
+const currentPage = ref(1)
+
+watch([searchQuery, filterDepartment, filterBranch, filterHireType, filterProbationDateFrom, filterProbationDateTo, filterContractEndDateFrom, filterContractEndDateTo], () => {
+  currentPage.value = 1
+})
+
+const paginatedEmployees = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return filteredEmployees.value.slice(start, start + 10)
+})
 
 const showOffboardModal = ref(false)
 const selectedEmployee = ref<EmployeeRow | null>(null)
@@ -172,11 +181,10 @@ const submitOffboardRequest = async () => {
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-slate-500">ประเภท</label>
-            <select v-model="filterEmployeeType" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+            <label class="text-xs font-medium text-slate-500">สถานะการจ้าง</label>
+            <select v-model="filterHireType" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
               <option value="">ทุกประเภท</option>
-              <option value="MONTHLY">รายเดือน</option>
-              <option value="DAILY">รายวัน</option>
+              <option v-for="opt in HIRE_TYPES" :key="opt.code" :value="opt.code">{{ opt.label }}</option>
             </select>
           </div>
 
@@ -217,48 +225,45 @@ const submitOffboardRequest = async () => {
               <th class="px-6 py-3 font-semibold">ประเภท</th>
               <th class="px-6 py-3 font-semibold">สถานะ</th>
               <th class="px-6 py-3 font-semibold whitespace-nowrap">วันที่เริ่มงาน</th>
+              <th class="px-6 py-3 font-semibold whitespace-nowrap">อายุงาน</th>
               <th class="px-6 py-3 font-semibold whitespace-nowrap">วันที่ผ่านทดลองงาน</th>
               <th class="px-6 py-3 font-semibold whitespace-nowrap">วันหมดสัญญา</th>
-              <th class="px-6 py-3 font-semibold text-right">การจัดการ</th>
+              <th class="px-6 py-3 font-semibold text-center">การจัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="emp in filteredEmployees" :key="emp.id" class="hover:bg-blue-50/30 transition-colors">
+            <tr v-for="emp in paginatedEmployees" :key="emp.id" class="hover:bg-blue-50/30 transition-colors">
               <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">
                 {{ emp.firstName }} {{ emp.lastName }}
               </td>
               <td class="px-6 py-4 text-slate-700">{{ emp.department || '-' }}</td>
               <td class="px-6 py-4">
-                <StatusBadge :text="emp.employeeType === 'MONTHLY' ? 'รายเดือน' : 'รายวัน'" :color="emp.employeeType === 'MONTHLY' ? 'purple' : 'blue'" />
+                <StatusBadge :text="hireTypeLabel(emp.hireType ?? emp.employeeType)" :color="emp.employeeType === 'MONTHLY' ? 'purple' : 'blue'" />
               </td>
               <td class="px-6 py-4">
                 <StatusBadge text="พนักงานปัจจุบัน" color="green" />
               </td>
               <td class="px-6 py-4 text-slate-600 whitespace-nowrap">{{ emp.startDate?.slice(0, 10) || '-' }}</td>
+              <td class="px-6 py-4 text-slate-600 whitespace-nowrap">{{ tenure(emp.startDate)?.label || '-' }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span v-if="emp.employeeType === 'MONTHLY'" class="text-slate-600">{{ emp.probationDate?.slice(0, 10) || '-' }}</span>
+                <span v-if="hireTypeDateField(emp.hireType ?? emp.employeeType) === 'probation'" :class="deadlineDateClass(emp.probationDate)">{{ emp.probationDate?.slice(0, 10) || '-' }}</span>
                 <span v-else class="text-slate-300">—</span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span v-if="emp.employeeType === 'DAILY'" :class="isContractSoon(emp.contractEndDate) ? 'text-red-600 font-semibold' : 'text-slate-600'">
+                <span v-if="hireTypeDateField(emp.hireType ?? emp.employeeType) === 'contract'" :class="deadlineDateClass(emp.contractEndDate)">
                   {{ emp.contractEndDate?.slice(0, 10) || '-' }}
                 </span>
                 <span v-else class="text-slate-300">—</span>
               </td>
-              <td class="px-6 py-4 text-right whitespace-nowrap">
-                <div class="flex items-center justify-end gap-2">
-                  <button @click="openOffboardModal(emp)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    แจ้งลาออก
-                  </button>
+              <td class="px-6 py-4 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center gap-2">
                   <NuxtLink :to="`/admin/hr/employees/${emp.id}`" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                     ดูรายละเอียด
                   </NuxtLink>
-                  <NuxtLink :to="`/admin/hr/applications/edit/${emp.id}`" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                    แก้ไขข้อมูล
-                  </NuxtLink>
+                  <button @click="openOffboardModal(emp)" title="แจ้งลาออก" aria-label="แจ้งลาออก" class="inline-flex items-center justify-center p-1.5 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -266,6 +271,7 @@ const submitOffboardRequest = async () => {
         </table>
         <EmptyState v-if="filteredEmployees.length === 0" message="ไม่พบข้อมูลพนักงานในขอบเขตสิทธิ์ของคุณ" />
       </div>
+      <AppPagination v-model:currentPage="currentPage" :totalItems="filteredEmployees.length" :itemsPerPage="10" />
     </div>
 
     <!-- Offboarding Request Modal -->
@@ -273,7 +279,7 @@ const submitOffboardRequest = async () => {
       <div class="space-y-4">
         <div>
           <p class="text-sm text-slate-500 mb-1">พนักงานที่ลาออก</p>
-          <p class="font-medium text-slate-900">{{ selectedEmployee?.firstName }} {{ selectedEmployee?.lastName }} ({{ selectedEmployee?.employeeType }})</p>
+          <p class="font-medium text-slate-900">{{ selectedEmployee?.firstName }} {{ selectedEmployee?.lastName }} ({{ hireTypeLabel(selectedEmployee?.hireType ?? selectedEmployee?.employeeType) }})</p>
         </div>
 
         <div>

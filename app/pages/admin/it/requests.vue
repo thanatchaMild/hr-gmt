@@ -3,22 +3,32 @@ definePageMeta({
   layout: 'admin'
 })
 import RequirePermission from '~/components/admin/RequirePermission.vue'
+import AppPagination from '~/components/admin/AppPagination.vue'
 import PageHeader from '~/components/admin/PageHeader.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import EmptyState from '~/components/admin/EmptyState.vue'
 import ITRequestDetailModal from '~/components/admin/ITRequestDetailModal.vue'
+import { formatRequestedItems, priorityLabel, priorityBadgeColor, type RequestedItem } from '~/utils/itRequest'
 
 interface ITRequestRow {
   id: string
   employeeName: string
   status: string
   type: string
-  requestedItems: string[]
+  requestedItems: Array<string | RequestedItem>
+  attachments?: { name: string; url: string }[]
   requestType: string | null
   department: string | null
   approver: string | null
   notes: string | null
   requestedBy: string | null
+  requestFor?: string
+  requesterName?: string | null
+  requesterEmployeeCode?: string | null
+  contactEmail?: string | null
+  priority?: string
+  neededDate?: string | null
+  returnDate?: string | null
   createdAt: string
 }
 
@@ -43,6 +53,13 @@ const filteredRequests = computed(() => {
   if (!searchQuery.value) return requests.value
   const q = searchQuery.value.toLowerCase()
   return requests.value.filter(req => req.employeeName.toLowerCase().includes(q))
+})
+
+const currentPage = ref(1)
+watch(searchQuery, () => { currentPage.value = 1 })
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return filteredRequests.value.slice(start, start + 10)
 })
 
 const cardClass = (req: ITRequestRow) => {
@@ -95,13 +112,14 @@ const advanceRequest = async (req: ITRequestRow) => {
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
       <div class="p-6">
         <div class="space-y-3">
-          <div v-for="req in filteredRequests" :key="req.id" class="border rounded-xl p-4 flex justify-between items-center transition-colors" :class="cardClass(req)">
+          <div v-for="req in paginatedRequests" :key="req.id" class="border rounded-xl p-4 flex justify-between items-center transition-colors" :class="cardClass(req)">
             <div>
-              <div class="flex items-center gap-3 mb-1">
+              <div class="flex items-center gap-3 mb-1 flex-wrap">
                 <span class="font-bold text-slate-800">{{ req.employeeName }}</span>
                 <StatusBadge :text="statusLabel[req.status]?.text" :color="statusLabel[req.status]?.color" />
+                <StatusBadge v-if="req.priority && req.priority !== 'NORMAL'" :text="`ความเร่งด่วน: ${priorityLabel(req.priority)}`" :color="priorityBadgeColor(req.priority)" />
               </div>
-              <p class="text-sm text-slate-600 mb-2">สิ่งที่ขอ: {{ req.requestedItems.join(', ') || '-' }}</p>
+              <p class="text-sm text-slate-600 mb-2">สิ่งที่ขอ: {{ formatRequestedItems(req.requestedItems) }}</p>
               <p class="text-xs text-slate-500">ร้องขอโดยฝ่าย HR: {{ req.requestedBy || '-' }} เมื่อวันที่ {{ req.createdAt?.slice(0, 10) }}</p>
             </div>
             <div class="flex gap-2">
@@ -119,6 +137,7 @@ const advanceRequest = async (req: ITRequestRow) => {
           <EmptyState v-if="filteredRequests.length === 0" message="ไม่พบคำขอที่ค้นหา" />
         </div>
       </div>
+      <AppPagination v-model:currentPage="currentPage" :totalItems="filteredRequests.length" :itemsPerPage="10" />
     </div>
 
     <ITRequestDetailModal v-if="selectedRequest" :request="selectedRequest" @close="selectedRequest = null" />

@@ -1,6 +1,7 @@
 interface OnboardingPayload {
   token?: string
-  employeeType: 'DAILY' | 'MONTHLY'
+  hireType?: string
+  employeeType?: 'DAILY' | 'MONTHLY'
   personalInfo: { firstName: string; lastName: string }
   contactInfo: { email: string; mobilePhone: string }
   pdpaConsent: boolean
@@ -13,7 +14,8 @@ interface OnboardingPayload {
 export default defineEventHandler(async (event) => {
   const body = await readBody<OnboardingPayload>(event)
 
-  if (!body?.employeeType || !body.personalInfo?.firstName || !body.contactInfo?.email) {
+  const hireType = parseHireTypeFromThai(body?.hireType) ?? body?.employeeType ?? null
+  if (!hireType || !body.personalInfo?.firstName || !body.contactInfo?.email) {
     throw createError({ statusCode: 400, statusMessage: 'Missing required onboarding fields' })
   }
 
@@ -26,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { token: _token, employeeCode: _employeeCode, personalInfo, contactInfo, documents, itRequest, employeeType, pdpaConsent, pdpaConsentDate, ...rest } = body
+  const { token: _token, employeeCode: _employeeCode, personalInfo, contactInfo, documents, itRequest, employeeType: _employeeType, hireType: _hireType, pdpaConsent, pdpaConsentDate, ...rest } = body
 
   const employee = await prisma.employee.create({
     data: {
@@ -34,7 +36,8 @@ export default defineEventHandler(async (event) => {
       lastName: personalInfo.lastName,
       email: contactInfo.email,
       phone: contactInfo.mobilePhone,
-      employeeType,
+      hireType,
+      employeeType: deriveEmployeeType(hireType),
       status: 'SUBMITTED',
       employeeCode: invite?.employeeCode,
       pdpaConsent: !!pdpaConsent,

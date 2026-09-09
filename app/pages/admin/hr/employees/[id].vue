@@ -6,6 +6,8 @@ import RequirePermission from '~/components/admin/RequirePermission.vue'
 import EmployeeProfileTabs from '~/components/admin/EmployeeProfileTabs.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import Modal from '~/components/admin/Modal.vue'
+import { hireTypeLabel, hireTypeDateField } from '~/utils/hireType'
+import { tenure, daysUntil } from '~/utils/tenure'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -13,6 +15,20 @@ const router = useRouter()
 const employeeId = route.params.id as string
 
 const { data: employee, refresh } = await useFetch<any>(`/api/employees/${employeeId}`)
+
+const dateField = computed(() => hireTypeDateField(employee.value?.hireType ?? employee.value?.employeeType))
+const tenureInfo = computed(() => tenure(employee.value?.startDate))
+const deadlineInfo = computed(() => {
+  if (!employee.value) return null
+  const date = dateField.value === 'probation' ? employee.value.probationDate
+    : dateField.value === 'contract' ? employee.value.contractEndDate
+      : null
+  if (!date) return null
+  const d = daysUntil(date)
+  if (d === null) return null
+  const label = dateField.value === 'probation' ? 'ครบกำหนดทดลองงาน' : 'สัญญาหมดอายุ'
+  return { days: d, text: d < 0 ? `เลยกำหนด ${-d} วัน` : d === 0 ? 'วันนี้' : `อีก ${d} วัน`, label }
+})
 
 const showRenewModal = ref(false)
 const renewForm = reactive({ newEndDate: '', note: '' })
@@ -91,29 +107,39 @@ const statusMeta: Record<string, { text: string; color: 'green' | 'red' | 'slate
           <p class="font-medium text-slate-900">{{ employee.managerName || '-' }}</p>
         </div>
         <div>
-          <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">ประเภทพนักงาน</p>
-          <p class="font-medium text-slate-900">{{ employee.employeeType === 'MONTHLY' ? 'พนักงานรายเดือน (ประจำ)' : 'พนักงานรายวัน' }}</p>
+          <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">สถานะการจ้าง</p>
+          <p class="font-medium text-slate-900">{{ hireTypeLabel(employee.hireType ?? employee.employeeType) }}</p>
         </div>
         <div>
           <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">วันที่เริ่มงาน</p>
           <p class="font-medium text-slate-900">{{ employee.startDate?.slice(0, 10) || '-' }}</p>
         </div>
         <div>
+          <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">อายุงาน</p>
+          <p class="font-medium text-slate-900">{{ tenureInfo?.label || '-' }}</p>
+        </div>
+        <div>
           <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">เบอร์โทร/อีเมล</p>
           <p class="font-medium text-slate-900">{{ employee.phone }} / {{ employee.email }}</p>
         </div>
-        <div v-if="employee.employeeType === 'MONTHLY'">
+        <div v-if="dateField === 'probation'">
           <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">วันที่ผ่านทดลองงาน</p>
-          <p class="font-medium text-slate-900">{{ employee.probationDate?.slice(0, 10) || '-' }}</p>
+          <p class="font-medium text-slate-900">
+            {{ employee.probationDate?.slice(0, 10) || '-' }}
+            <span v-if="deadlineInfo" class="ml-1 text-xs" :class="deadlineInfo.days < 0 ? 'text-rose-600' : deadlineInfo.days <= 7 ? 'text-amber-600' : 'text-slate-400'">({{ deadlineInfo.text }})</span>
+          </p>
         </div>
       </div>
 
-      <!-- Contract card for DAILY employees -->
-      <div v-if="employee.employeeType === 'DAILY'" class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl shadow-sm border border-amber-100 p-6">
+      <!-- Contract card for รายวัน / สัญญาจ้าง -->
+      <div v-if="dateField === 'contract'" class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl shadow-sm border border-amber-100 p-6">
         <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
           <div>
             <h3 class="text-lg font-bold text-amber-900">สัญญาจ้าง</h3>
-            <p class="text-sm text-amber-700/80 mt-0.5">วันหมดสัญญาปัจจุบัน: {{ employee.contractEndDate?.slice(0, 10) || '-' }}</p>
+            <p class="text-sm text-amber-700/80 mt-0.5">
+              วันหมดสัญญาปัจจุบัน: {{ employee.contractEndDate?.slice(0, 10) || '-' }}
+              <span v-if="deadlineInfo" class="ml-1 font-semibold" :class="deadlineInfo.days < 0 ? 'text-rose-600' : deadlineInfo.days <= 7 ? 'text-rose-500' : 'text-amber-700'">({{ deadlineInfo.text }})</span>
+            </p>
           </div>
           <button @click="openRenewModal" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 shadow-sm flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -135,7 +161,14 @@ const statusMeta: Record<string, { text: string; color: 'green' | 'red' | 'slate
         </div>
       </div>
 
-      <EmployeeProfileTabs :form-data="employee.formData" :documents="employee.documents" :it-requests="employee.itRequests" />
+      <EmployeeProfileTabs
+        :form-data="employee.formData"
+        :documents="employee.documents"
+        :it-requests="employee.itRequests"
+        :employee="employee"
+        editable
+        @saved="refresh"
+      />
     </div>
 
     <Modal v-if="showRenewModal" title="ต่อสัญญาจ้าง" @close="showRenewModal = false">

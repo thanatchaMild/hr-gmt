@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   requiredRole?: 'HR_ADMIN' | 'IT_ADMIN'
-  employeeScope?: 'DAILY' | 'MONTHLY'
+  hireType?: 'DAILY' | 'MONTHLY' | 'SUBCONTRACT' | 'FIXED_TERM'
 }>()
 
 const authStore = useAuthStore()
@@ -18,9 +18,8 @@ const hasPermission = computed(() => {
   }
 
   // Check scope if HR Admin
-  if (props.employeeScope && authStore.user.role === 'HR_ADMIN') {
-    if (props.employeeScope === 'DAILY' && !authStore.canManageDaily) return false
-    if (props.employeeScope === 'MONTHLY' && !authStore.canManageMonthly) return false
+  if (props.hireType && authStore.user.role === 'HR_ADMIN' && !authStore.canManageHireType(props.hireType)) {
+    return false
   }
 
   return true

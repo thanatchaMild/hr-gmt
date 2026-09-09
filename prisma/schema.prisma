@@ -27,8 +27,10 @@ model Employee {
   lastName        String    @map("last_name")
   email           String
   phone           String
-  employeeType    String    @map("employee_type") // 'DAILY' | 'MONTHLY'
+  employeeType    String    @map("employee_type") // 'DAILY' | 'MONTHLY' — derived from hireType (payroll/probation axis)
+  hireType        String?   @map("hire_type") // 'DAILY' | 'MONTHLY' | 'SUBCONTRACT' | 'FIXED_TERM' (สถานะการจ้าง)
   status          String    @default("SUBMITTED") // 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'OFFBOARDED'
+  source          String    @default("ONBOARDING") // 'ONBOARDING' (submitted an onboarding form) | 'IMPORT' (legacy CSV/Excel import)
   employeeCode    String?   @map("employee_code")
   department      String?
   branch          String?
@@ -84,14 +86,24 @@ model ITRequest {
   id             Int      @id @default(autoincrement())
   employeeId     Int?     @map("employee_id")
   employeeName   String   @map("employee_name")
-  type           String // 'ONBOARDING' | 'OFFBOARDING'
+  type           String // 'ONBOARDING' | 'OFFBOARDING' | 'ASSET_REQUEST'
   status         String   @default("PENDING") // 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
-  requestedItems String   @db.NVarChar(Max) @map("requested_items") // JSON string array
+  requestedItems String   @db.NVarChar(Max) @map("requested_items") // JSON: string[] (legacy) | {category,name,quantity,note}[]
   requestType    String?  @map("request_type")
   department     String?
   approver       String?
   notes          String?  @db.NVarChar(Max)
   requestedBy    String?  @map("requested_by")
+
+  requestFor            String    @default("SELF") @map("request_for") // 'SELF' | 'OTHER'
+  requesterName         String?   @map("requester_name")
+  requesterEmployeeCode String?   @map("requester_employee_code")
+  contactEmail          String?   @map("contact_email")
+  priority              String    @default("NORMAL") // 'NORMAL' | 'URGENT' | 'CRITICAL'
+  neededDate            DateTime? @map("needed_date")
+  returnDate            DateTime? @map("return_date")
+  attachments           String?   @db.NVarChar(Max) // JSON [{ name, url }]
+
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

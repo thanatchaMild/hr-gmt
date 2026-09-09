@@ -1,10 +1,26 @@
 export type Role = 'HR_ADMIN' | 'IT_ADMIN'
-export type PermissionScope = 'ALL' | 'DAILY_ONLY' | 'MONTHLY_ONLY'
+// 'ALL' or a comma-separated list of HireType codes, e.g. 'DAILY,SUBCONTRACT,FIXED_TERM'
+export type PermissionScope = 'ALL' | string
 export type EmployeeType = 'DAILY' | 'MONTHLY'
+export type HireType = 'DAILY' | 'MONTHLY' | 'SUBCONTRACT' | 'FIXED_TERM'
 export type EmployeeStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'OFFBOARDED'
 export type RequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
-export type RequestType = 'ONBOARDING' | 'OFFBOARDING'
+export type RequestType = 'ONBOARDING' | 'OFFBOARDING' | 'ASSET_REQUEST'
+export type ITRequestPriority = 'NORMAL' | 'URGENT' | 'CRITICAL'
+export type RequestFor = 'SELF' | 'OTHER'
 export type AssetStatus = 'IN_STOCK' | 'ASSIGNED' | 'MAINTENANCE'
+
+export interface RequestedItem {
+  category: string
+  name: string
+  quantity: number
+  note: string
+}
+
+export interface RequestAttachment {
+  name: string
+  url: string
+}
 
 export interface User {
   id: string
@@ -23,6 +39,7 @@ export interface Employee {
   email: string
   phone: string
   employeeType: EmployeeType
+  hireType: HireType | null
   status: EmployeeStatus
   employeeCode: string | null
   department: string | null
@@ -51,12 +68,20 @@ export interface ITRequest {
   employeeName: string
   type: RequestType
   status: RequestStatus
-  requestedItems: string[]
+  requestedItems: string[] | RequestedItem[]
   requestType: string | null
   department: string | null
   approver: string | null
   notes: string | null
   requestedBy: string | null // HR Admin who requested, or null if self
+  requestFor: RequestFor
+  requesterName: string | null
+  requesterEmployeeCode: string | null
+  contactEmail: string | null
+  priority: ITRequestPriority
+  neededDate: Date | null
+  returnDate: Date | null
+  attachments: RequestAttachment[]
   createdAt: Date
   updatedAt: Date
 }

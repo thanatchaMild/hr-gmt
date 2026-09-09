@@ -16,7 +16,8 @@ const handleLogin = async () => {
   isSubmitting.value = true
 
   try {
-    await authStore.login(username.value.toLowerCase(), password.value)
+    // Trim so a stray space from copy-paste doesn't block a valid login.
+    await authStore.login(username.value.trim().toLowerCase(), password.value.trim())
     if (authStore.isITAdmin) {
       router.push('/admin/it/requests')
     } else {

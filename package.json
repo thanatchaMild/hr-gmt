@@ -10,6 +10,9 @@
     "postinstall": "nuxt prepare && prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-test": "tsx prisma/seed-test-employees.ts",
+    "db:seed-pagination": "tsx prisma/seed-pagination-testdata.ts",
+    "db:backfill-hiretype": "tsx prisma/backfill-hiretype.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
@@ -27,7 +30,8 @@
     "prisma": "^6.19.3",
     "tailwindcss": "^3.4.19",
     "vue": "^3.5.35",
-    "vue-router": "^5.1.0"
+    "vue-router": "^5.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

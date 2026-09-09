@@ -1,8 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-const UPLOAD_DIR = join(process.cwd(), 'server', 'uploads')
 
 export default defineEventHandler(async (event) => {
   const files = await readMultipartFormData(event)
@@ -12,7 +10,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'No file provided' })
   }
 
-  await mkdir(UPLOAD_DIR, { recursive: true })
+  if (file.data.length > MAX_UPLOAD_BYTES) {
+    throw createError({ statusCode: 413, statusMessage: 'ไฟล์ใหญ่เกินไป (สูงสุด 15 MB)' })
+  }
+
+  // Trust the extension when the browser doesn't send a usable mime type.
+  const typeOk =
+    (file.type && ALLOWED_UPLOAD_MIME.has(file.type)) ||
+    contentTypeFor(file.filename) !== 'application/octet-stream'
+  if (!typeOk) {
+    throw createError({ statusCode: 415, statusMessage: 'รองรับเฉพาะไฟล์รูปภาพหรือ PDF' })
+  }
+
+  await ensureUploadDir()
 
   const safeName = file.filename.replace(/[^a-zA-Z0-9.\-_]/g, '_')
   const storedName = `${randomUUID()}-${safeName}`

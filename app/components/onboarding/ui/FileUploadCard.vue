@@ -15,6 +15,11 @@ const fileName = computed(() => {
   return null
 })
 
+// When the value is an already-uploaded file (URL string), expose a link to view it.
+const existingUrl = computed(() =>
+  typeof props.modelValue === 'string' && props.modelValue ? props.modelValue : null
+)
+
 function onChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0] ?? null
   emit('update:modelValue', file)
@@ -38,6 +43,15 @@ function onChange(e: Event) {
       <p class="text-xs mt-0.5 truncate" :class="fileName ? 'text-emerald-600' : 'text-slate-400'">
         {{ fileName || 'คลิกเพื่อเลือกไฟล์' }}
       </p>
+      <a
+        v-if="existingUrl"
+        :href="existingUrl"
+        target="_blank"
+        class="relative z-10 text-xs font-medium text-primary-600 hover:underline"
+        @click.stop
+      >
+        ดูไฟล์เดิม
+      </a>
     </div>
     <input type="file" :accept="accept" class="sr-only" @change="onChange">
   </label>

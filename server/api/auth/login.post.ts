@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ username?: string; password?: string }>(event)
   const username = body.username?.trim().toLowerCase()
-  const password = body.password
+  const password = body.password?.trim()
 
   if (!username || !password) {
     throw createError({ statusCode: 400, statusMessage: 'Username and password are required' })

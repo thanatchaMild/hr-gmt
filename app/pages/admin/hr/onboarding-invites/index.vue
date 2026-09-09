@@ -3,6 +3,7 @@ definePageMeta({
   layout: 'admin'
 })
 import RequirePermission from '~/components/admin/RequirePermission.vue'
+import AppPagination from '~/components/admin/AppPagination.vue'
 import PageHeader from '~/components/admin/PageHeader.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import EmptyState from '~/components/admin/EmptyState.vue'
@@ -23,12 +24,18 @@ interface Invite {
 
 const { data, refresh } = await useFetch<{ invites: Invite[] }>('/api/onboarding-invites')
 const invites = computed(() => data.value?.invites || [])
-
 const searchQuery = ref('')
 const filteredInvites = computed(() => {
   if (!searchQuery.value) return invites.value
   const q = searchQuery.value.toLowerCase()
   return invites.value.filter(inv => `${inv.firstName} ${inv.lastName} ${inv.employeeCode}`.toLowerCase().includes(q))
+})
+
+const currentPage = ref(1)
+watch(searchQuery, () => { currentPage.value = 1 })
+const paginatedInvites = computed(() => {
+  const start = (currentPage.value - 1) * 10
+  return filteredInvites.value.slice(start, start + 10)
 })
 
 const statusMeta: Record<Invite['status'], { text: string; color: 'blue' | 'green' | 'slate' | 'red' }> = {
@@ -152,7 +159,7 @@ const regenerateInvite = async (invite: Invite) => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="inv in filteredInvites" :key="inv.id" class="hover:bg-blue-50/30 transition-colors">
+            <tr v-for="inv in paginatedInvites" :key="inv.id" class="hover:bg-blue-50/30 transition-colors">
               <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">{{ inv.employeeCode }}</td>
               <td class="px-6 py-4 text-slate-700 whitespace-nowrap">{{ inv.firstName }} {{ inv.lastName }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
@@ -185,6 +192,7 @@ const regenerateInvite = async (invite: Invite) => {
         </table>
         <EmptyState v-if="filteredInvites.length === 0" message="ยังไม่มีลิงก์สมัครงานที่สร้างไว้" />
       </div>
+      <AppPagination v-model:currentPage="currentPage" :totalItems="filteredInvites.length" :itemsPerPage="10" />
     </div>
 
     <!-- Create / Regenerate Invite Modal -->
