@@ -5,6 +5,8 @@ module.exports = {
     "./app/layouts/**/*.vue",
     "./app/pages/**/*.vue",
     "./app/plugins/**/*.{js,ts}",
+    // Color classes returned by helpers (status / type / avatar palettes) live here.
+    "./app/utils/**/*.ts",
     "./app/app.vue",
     "./app/error.vue"
   ],

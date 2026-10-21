@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue'
+import Modal from '~/components/admin/Modal.vue'
 import StatusBadge from '~/components/admin/StatusBadge.vue'
 import { formatRequestedItems, type RequestedItem } from '~/utils/itRequest'
 import { useOnboardingStore } from '~/stores/onboarding'
@@ -33,8 +34,7 @@ const tabs = [
   { id: 'experience', num: 4, name: 'การทำงาน' },
   { id: 'skills', num: 5, name: 'ความสามารถทั่วไป' },
   { id: 'references', num: 6, name: 'เอกสารอ้างอิง' },
-  { id: 'documents', num: 7, name: 'เอกสารแนบ' },
-  { id: 'itHistory', num: 8, name: 'ประวัติขอ IT' }
+  { id: 'documents', num: 7, name: 'เอกสารแนบ' }
 ]
 
 // Which Step form drives each tab while editing. itHistory has none (read-only).
@@ -69,6 +69,10 @@ const itRequestStatusMeta: Record<string, { text: string; color: 'yellow' | 'blu
   IN_PROGRESS: { text: 'กำลังดำเนินการ', color: 'blue' },
   COMPLETED: { text: 'ดำเนินการเสร็จสิ้น', color: 'green' }
 }
+
+const showConsentModal = ref(false)
+const showItModal = ref(false)
+const pdpaSignature = computed(() => props.formData?.pdpaSignature || null)
 
 const personalInfo = computed(() => props.formData?.personalInfo || {})
 const contactInfo = computed(() => props.formData?.contactInfo || {})
@@ -181,15 +185,32 @@ async function save() {
             {{ isSaving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
           </button>
         </template>
-        <button
-          v-else
-          type="button"
-          class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 shadow-sm flex items-center gap-1.5"
-          @click="startEdit"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-          แก้ไขข้อมูล
-        </button>
+        <div v-else class="flex items-center gap-2">
+          <button
+            type="button"
+            class="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-50 shadow-sm flex items-center gap-1.5"
+            @click="showConsentModal = true"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            ดู Consent
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 bg-white border border-violet-200 text-violet-700 rounded-lg text-sm font-medium hover:bg-violet-50 shadow-sm flex items-center gap-1.5"
+            @click="showItModal = true"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            ประวัติขอ IT
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-50 shadow-sm flex items-center gap-1.5"
+            @click="startEdit"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            แก้ไขข้อมูล
+          </button>
+        </div>
       </div>
     </div>
 
@@ -408,23 +429,6 @@ async function save() {
         <p v-if="!documents || documents.length === 0" class="text-center text-slate-400 py-6">ไม่มีเอกสารแนบ</p>
       </div>
 
-      <!-- IT Request History (read-only in both modes) -->
-      <div v-if="activeTab === 'itHistory'">
-        <h4 class="text-lg font-bold text-slate-800 mb-4 pb-3">ประวัติการขออุปกรณ์ IT</h4>
-        <p v-if="isEditing" class="text-sm text-slate-400 mb-4">แท็บนี้แก้ไขไม่ได้จากหน้านี้</p>
-        <div class="space-y-3">
-          <div v-for="req in itRequests" :key="req.id" class="border border-slate-200 rounded-xl p-4 hover:border-blue-300 transition-colors bg-slate-50/50">
-            <div class="flex items-center justify-between gap-3 mb-2 flex-wrap">
-              <span class="font-medium text-slate-900">{{ itRequestTypeLabels[req.type] || req.type }}</span>
-              <StatusBadge :text="itRequestStatusMeta[req.status]?.text || req.status" :color="itRequestStatusMeta[req.status]?.color || 'yellow'" />
-            </div>
-            <p class="text-sm text-slate-600">สิ่งที่ขอ: {{ formatRequestedItems(req.requestedItems) }}</p>
-            <p v-if="req.notes" class="text-sm text-slate-500 mt-1">หมายเหตุ: {{ req.notes }}</p>
-            <p class="text-xs text-slate-400 mt-2">วันที่ส่งคำขอ: {{ req.createdAt?.slice(0, 10) }}</p>
-          </div>
-        </div>
-        <p v-if="!itRequests || itRequests.length === 0" class="text-center text-slate-400 py-6">ไม่มีประวัติการขออุปกรณ์ IT</p>
-      </div>
     </div>
 
     <Teleport to="body">
@@ -443,4 +447,73 @@ async function save() {
       </Transition>
     </Teleport>
   </div>
+
+  <!-- Consent Modal -->
+  <Modal v-if="showConsentModal" title="ข้อมูล Consent / ความยินยอม PDPA" @close="showConsentModal = false">
+    <div class="space-y-6">
+      <!-- Consent Status -->
+      <div class="p-4 rounded-xl border border-slate-200 bg-slate-50">
+        <p class="text-sm font-semibold text-slate-700 mb-3">หนังสือให้ความยินยอม</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-slate-500 mb-1">การให้ความยินยอม</p>
+            <span v-if="employee?.pdpaConsent" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              ให้ความยินยอม
+            </span>
+            <span v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              ไม่ให้ความยินยอม
+            </span>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 mb-1">วันที่ให้ความยินยอม</p>
+            <p class="text-sm font-medium text-slate-900">{{ employee?.pdpaConsentDate?.slice(0, 10) || '-' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PDPA Consent Status -->
+      <div class="p-4 rounded-xl border border-slate-200 bg-white">
+        <p class="text-sm font-semibold text-slate-700 mb-3">สถานะการกดยินยอม PDPA</p>
+        <div class="flex items-center gap-3">
+          <span v-if="employee?.pdpaConsent" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            ผู้สมัครกด "ให้" ความยินยอม
+          </span>
+          <span v-else class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            ผู้สมัครกด "ไม่ให้" ความยินยอม
+          </span>
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div class="p-4 rounded-xl border border-slate-200 bg-white">
+        <p class="text-sm font-semibold text-slate-700 mb-3">ลายมือชื่ออิเล็กทรอนิกส์</p>
+        <div v-if="pdpaSignature" class="bg-slate-50 rounded-lg border border-dashed border-slate-300 p-4 flex items-center justify-center">
+          <img :src="pdpaSignature" alt="ลายเซ็น" class="max-h-32" />
+        </div>
+        <div v-else class="bg-slate-50 rounded-lg border border-dashed border-slate-300 p-6 text-center">
+          <p class="text-sm text-slate-400">ไม่มีข้อมูลลายเซ็น</p>
+        </div>
+      </div>
+    </div>
+  </Modal>
+
+  <!-- IT Request History Modal -->
+  <Modal v-if="showItModal" title="ประวัติการขออุปกรณ์ IT" @close="showItModal = false">
+    <div class="space-y-3">
+      <div v-for="req in itRequests" :key="req.id" class="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
+        <div class="flex items-center justify-between gap-3 mb-2 flex-wrap">
+          <span class="font-medium text-slate-900">{{ itRequestTypeLabels[req.type] || req.type }}</span>
+          <StatusBadge :text="itRequestStatusMeta[req.status]?.text || req.status" :color="itRequestStatusMeta[req.status]?.color || 'yellow'" />
+        </div>
+        <p class="text-sm text-slate-600">สิ่งที่ขอ: {{ formatRequestedItems(req.requestedItems) }}</p>
+        <p v-if="req.notes" class="text-sm text-slate-500 mt-1">หมายเหตุ: {{ req.notes }}</p>
+        <p class="text-xs text-slate-400 mt-2">วันที่ส่งคำขอ: {{ req.createdAt?.slice(0, 10) }}</p>
+      </div>
+    </div>
+    <p v-if="!itRequests || itRequests.length === 0" class="text-center text-slate-400 py-6">ไม่มีประวัติการขออุปกรณ์ IT</p>
+  </Modal>
 </template>
