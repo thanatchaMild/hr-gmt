@@ -38,15 +38,23 @@ onMounted(async () => {
     isCheckingToken.value = false
   } else {
     try {
-      const result = await $fetch<ValidateResponse>('/api/onboarding-invites/validate', { query: { token } })
+      const result = await $fetch<ValidateResponse & { mode?: string; employee?: any }>('/api/onboarding-invites/validate', { query: { token } })
       if (!result.valid) {
         router.replace(`/onboarding/invalid-link?reason=${result.reason || 'NOT_FOUND'}`)
         return
       }
       store.setToken(token)
       if (result.employeeCode) store.setEmployeeCode(result.employeeCode)
-      if (result.firstName) store.personalInfo.firstName = result.firstName
-      if (result.lastName) store.personalInfo.lastName = result.lastName
+      if (result.mode === 'edit' && result.employee) {
+        store.editingEmployeeId = result.employee.id
+        store.loadFromEmployee(result.employee)
+        store.pdpaConsent = true
+        router.replace('/onboarding/form')
+        return
+      } else {
+        if (result.firstName) store.personalInfo.firstName = result.firstName
+        if (result.lastName) store.personalInfo.lastName = result.lastName
+      }
     } finally {
       isCheckingToken.value = false
     }

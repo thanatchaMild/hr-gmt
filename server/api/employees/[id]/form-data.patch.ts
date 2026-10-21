@@ -1,4 +1,6 @@
 interface UpdateFormDataPayload {
+  token?: string
+  hireType?: string
   personalInfo?: { firstName?: string; lastName?: string }
   contactInfo?: { email?: string; mobilePhone?: string }
   familyInfo: unknown
@@ -11,19 +13,28 @@ interface UpdateFormDataPayload {
 }
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireRole(event, 'HR_ADMIN')
   const id = Number(getRouterParam(event, 'id'))
   const body = await readBody<UpdateFormDataPayload>(event)
-
-  // HR edit form: no field is mandatory — accept whatever is submitted.
 
   const existing = await prisma.employee.findUnique({ where: { id } })
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Employee not found' })
   }
 
-  if (isOutOfHireTypeScope(user, existing)) {
-    throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+  if (body.token) {
+    const invite = await prisma.onboardingInvite.findUnique({ where: { token: body.token } })
+    if (!invite || invite.status !== 'PENDING' || invite.employeeId !== id || invite.expiresAt < new Date()) {
+      throw createError({ statusCode: 403, statusMessage: 'ลิงก์ไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว' })
+    }
+    await prisma.onboardingInvite.update({
+      where: { id: invite.id },
+      data: { status: 'SUBMITTED', submittedAt: new Date() }
+    })
+  } else {
+    const { user } = await requireRole(event, 'HR_ADMIN')
+    if (isOutOfHireTypeScope(user, existing)) {
+      throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+    }
   }
 
   const {

@@ -425,8 +425,12 @@ const printDocument = () => {
         </div>
       </div>
       <!-- Footer Page 1 -->
-      <div class="flex justify-end text-[10.5px] mt-2">
-        1/8
+      <div class="text-[10.5px] mt-2">
+        <div class="flex justify-end mb-1.5">1/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -657,8 +661,12 @@ const printDocument = () => {
         </div>
       </div>
       <!-- Footer Page 2 -->
-      <div class="flex justify-end text-[10.5px] mt-2">
-        2/8
+      <div class="text-[10.5px] mt-2">
+        <div class="flex justify-end mb-1.5">2/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -964,10 +972,34 @@ const printDocument = () => {
             </tbody>
           </table>
         </div>
+
+        <!-- Applicant Signature -->
+        <div class="text-[10px] mt-3 mb-1">
+          ข้าพเจ้าขอรับรองว่าข้อความข้างต้นเป็นจริงทุกประการ / I certify that the above statements are true and correct in all respects.
+        </div>
+        <div class="flex justify-center mt-2">
+          <div class="flex flex-col text-[10.5px] font-bold w-[60%] items-center">
+            <div class="flex items-end mb-3 w-full">
+              <span class="mr-2">ลงชื่อ/Signature</span>
+              <div class="relative flex-1 border-b border-dotted border-black flex justify-center h-6">
+                <img v-if="store.pdpaSignature" :src="store.pdpaSignature" class="max-h-12 absolute bottom-1" />
+              </div>
+              <span class="ml-2">ผู้สมัคร/Applicant</span>
+            </div>
+            <div class="flex items-end justify-center w-full mt-1">
+              <span class="mr-2">วันที่/Date</span>
+              <div class="w-48 border-b border-dotted border-black text-center font-normal text-blue-800 pb-1">{{ store.pdpaConsentDate ? formatDate(store.pdpaConsentDate) : '' }}</div>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Footer Page 3 -->
-      <div class="flex justify-end text-[10.5px] mt-2">
-        3/8
+      <div class="text-[10.5px] mt-2">
+        <div class="flex justify-end mb-1.5">3/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -987,8 +1019,12 @@ const printDocument = () => {
 
         <div class="pdpa-preview-content text-[9.5px]" v-html="cleanPdpaHtmlPartA"></div>
       </div>
-      <div class="flex justify-end text-[10.5px] mt-1">
-        4/8
+      <div class="text-[10.5px] mt-1">
+        <div class="flex justify-end mb-1.5">4/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -997,8 +1033,12 @@ const printDocument = () => {
       <div class="content flex-1">
         <div class="pdpa-preview-content text-[9.5px]" v-html="cleanPdpaHtmlPartB"></div>
       </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        5/8
+      <div class="text-[10.5px] mt-6">
+        <div class="flex justify-end mb-1.5">5/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -1044,8 +1084,12 @@ const printDocument = () => {
         </div>
       </div>
 
-      <div class="flex justify-end text-[10.5px] mt-6">
-        6/8
+      <div class="text-[10.5px] mt-6">
+        <div class="flex justify-end mb-1.5">6/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -1068,8 +1112,12 @@ const printDocument = () => {
 
         <div class="pdpa-preview-content text-[9.5px]" v-html="cleanConsentHtmlPartA"></div>
       </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        7/8
+      <div class="text-[10.5px] mt-6">
+        <div class="flex justify-end mb-1.5">7/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 
@@ -1095,8 +1143,12 @@ const printDocument = () => {
           </div>
         </div>
       </div>
-      <div class="flex justify-end text-[10.5px] mt-6">
-        8/8
+      <div class="text-[10.5px] mt-6">
+        <div class="flex justify-end mb-1.5">8/8</div>
+        <div class="flex justify-between">
+          <span>ED 02/03/2026</span>
+          <span>FM-HRS-03 ,Rev:02</span>
+        </div>
       </div>
     </div>
 

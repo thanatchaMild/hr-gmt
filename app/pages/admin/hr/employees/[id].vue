@@ -30,6 +30,23 @@ const deadlineInfo = computed(() => {
   return { days: d, text: d < 0 ? `เลยกำหนด ${-d} วัน` : d === 0 ? 'วันนี้' : `อีก ${d} วัน`, label }
 })
 
+const editLinkCopied = ref(false)
+const editLinkCreating = ref(false)
+const createEditLink = async () => {
+  editLinkCreating.value = true
+  try {
+    const res = await $fetch<{ invite: { token: string } }>(`/api/employees/${employeeId}/edit-invite`, { method: 'POST' })
+    const link = `${window.location.origin}/onboarding/pdpa?token=${res.invite.token}`
+    await navigator.clipboard.writeText(link)
+    editLinkCopied.value = true
+    setTimeout(() => { editLinkCopied.value = false }, 3000)
+  } catch {
+    alert('ไม่สามารถสร้างลิงก์ได้')
+  } finally {
+    editLinkCreating.value = false
+  }
+}
+
 const showRenewModal = ref(false)
 const renewForm = reactive({ newEndDate: '', note: '' })
 const isRenewing = ref(false)
@@ -93,6 +110,12 @@ const statusMeta: Record<string, { text: string; color: 'green' | 'red' | 'slate
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
             ดูใบสมัครงาน
           </NuxtLink>
+          <button @click="createEditLink" :disabled="editLinkCreating" class="px-4 py-2 border rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors" :class="editLinkCopied ? 'bg-green-50 border-green-300 text-green-700' : editLinkCreating ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-wait' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-50'">
+            <svg v-if="editLinkCreating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <svg v-else-if="!editLinkCopied" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            {{ editLinkCreating ? 'กำลังสร้าง...' : editLinkCopied ? 'คัดลอกลิงก์แล้ว!' : 'ลิงก์แก้ไขข้อมูล' }}
+          </button>
           <StatusBadge :text="statusMeta[employee.status]?.text || employee.status" :color="statusMeta[employee.status]?.color || 'slate'" />
         </div>
       </div>

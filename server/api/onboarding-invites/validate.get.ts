@@ -27,8 +27,29 @@ export default defineEventHandler(async (event) => {
     return { valid: false, reason: 'EXPIRED' }
   }
 
+  if (invite.employeeId) {
+    const employee = await prisma.employee.findUnique({
+      where: { id: invite.employeeId },
+      include: { documents: true }
+    })
+    if (employee) {
+      return {
+        valid: true,
+        mode: 'edit' as const,
+        employeeCode: invite.employeeCode,
+        firstName: invite.firstName,
+        lastName: invite.lastName,
+        employee: {
+          ...employee,
+          formData: JSON.parse(employee.formData)
+        }
+      }
+    }
+  }
+
   return {
     valid: true,
+    mode: 'new' as const,
     employeeCode: invite.employeeCode,
     firstName: invite.firstName,
     lastName: invite.lastName

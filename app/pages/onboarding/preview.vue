@@ -57,8 +57,11 @@ const closeModal = () => {
         <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-emerald-100">
           <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
         </div>
-        <h3 class="text-2xl font-bold text-slate-800 mb-2">ส่งข้อมูลสำเร็จ!</h3>
-        <p class="text-slate-500 mb-8 text-sm leading-relaxed">ข้อมูลของคุณถูกส่งเข้าระบบเรียบร้อยแล้ว<br>ฝ่าย HR จะทำการตรวจสอบในลำดับถัดไป</p>
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">{{ store.editingEmployeeId ? 'แก้ไขข้อมูลสำเร็จ!' : 'ส่งข้อมูลสำเร็จ!' }}</h3>
+        <p class="text-slate-500 mb-8 text-sm leading-relaxed">
+          <template v-if="store.editingEmployeeId">ข้อมูลของคุณถูกอัปเดตเรียบร้อยแล้ว<br>ขอบคุณที่กรอกข้อมูลเพิ่มเติม</template>
+          <template v-else>ข้อมูลของคุณถูกส่งเข้าระบบเรียบร้อยแล้ว<br>ฝ่าย HR จะทำการตรวจสอบในลำดับถัดไป</template>
+        </p>
         <AppButton variant="success" size="lg" block @click="closeModal">กลับสู่หน้าหลัก</AppButton>
       </div>
     </div>

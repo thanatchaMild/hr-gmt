@@ -11,6 +11,52 @@ const route = useRoute()
 const sidebarOpen = ref(false)
 watch(() => route.fullPath, () => { sidebarOpen.value = false })
 
+// IT sidebar. `match` covers child routes (detail pages) that should keep their list item highlighted.
+interface NavItem { to: string; label: string; icon: string; match?: RegExp }
+const ICONS = {
+  inbox: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  chart: 'M4 19V9m6 10V5m6 14v-7m4 7H2',
+  box: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+  swap: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+  users: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+  laptop: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  check: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+  list: 'M4 6h16M4 12h16M4 18h10',
+}
+// dot / icon: section accent colors (literal classes so Tailwind keeps them).
+const itNav: { label: string; dot: string; icon: string; items: NavItem[] }[] = [
+  {
+    label: 'งานคำขอ',
+    dot: 'bg-sky-400',
+    icon: 'text-sky-500',
+    items: [{ to: '/admin/it/requests', label: 'จัดการคำขอ (HR → IT)', icon: ICONS.inbox }],
+  },
+  {
+    label: 'ทรัพย์สิน · AppSheet',
+    dot: 'bg-emerald-400',
+    icon: 'text-emerald-500',
+    items: [
+      { to: '/admin/it/assets', label: 'ภาพรวม', icon: ICONS.chart },
+      { to: '/admin/it/assets/list', label: 'รายการทรัพย์สิน', icon: ICONS.box, match: /^\/admin\/it\/assets\/\d+/ },
+      { to: '/admin/it/assets/transfers', label: 'ประวัติโอนย้าย', icon: ICONS.swap },
+      { to: '/admin/it/appsheet-employees', label: 'ข้อมูลพนักงาน', icon: ICONS.users },
+    ],
+  },
+  {
+    label: 'คำขอทรัพย์สิน · myapp',
+    dot: 'bg-violet-400',
+    icon: 'text-violet-500',
+    items: [
+      { to: '/admin/it/asset-requests', label: 'ขอทรัพย์สินไอที', icon: ICONS.laptop, match: /^\/admin\/it\/asset-requests\/\d+/ },
+      { to: '/admin/it/asset-requests/queue', label: 'รายการที่ยืนยันแล้ว', icon: ICONS.check },
+      { to: '/admin/it/asset-catalog', label: 'รายการขอทรัพย์สิน (Master)', icon: ICONS.list },
+    ],
+  },
+]
+function isNavActive(item: NavItem) {
+  return route.path === item.to || !!item.match?.test(route.path)
+}
+
 const logout = async () => {
   await authStore.logout()
   router.push('/login')
@@ -35,7 +81,7 @@ const logout = async () => {
         <img src="/Logo_GM_small.png" alt="GMT Logo" class="h-12 w-auto object-contain">
       </div>
       <nav class="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-        <NuxtLink to="/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium text-sm" exact-active-class="!bg-gradient-to-r !from-blue-50 !to-blue-50/40 !text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100">
+        <NuxtLink to="/admin" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors font-medium text-sm" :exact-active-class="authStore.isITAdmin ? '!bg-gradient-to-r !from-violet-600 !to-indigo-600 !text-white font-semibold shadow-md shadow-violet-500/25' : '!bg-gradient-to-r !from-blue-50 !to-blue-50/40 !text-blue-700 font-semibold shadow-sm ring-1 ring-blue-100'">
           <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
           แดชบอร์ด
         </NuxtLink>
@@ -79,28 +125,21 @@ const logout = async () => {
         </NuxtLink>
 
         <!-- IT Admin Menus -->
-        <div v-if="authStore.isITAdmin" class="pt-5 pb-2 px-3 text-[11px] font-bold uppercase text-slate-400 tracking-widest">ระบบอุปกรณ์ (IT)</div>
-        <NuxtLink v-if="authStore.isITAdmin" to="/admin/it/requests" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-purple-600 transition-colors" active-class="!bg-gradient-to-r !from-purple-50 !to-purple-50/40 !text-purple-700 font-semibold shadow-sm ring-1 ring-purple-100">
-          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          <div class="flex flex-col leading-tight">
-            <span class="text-sm font-medium">จัดการคำขอ</span>
-            <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">IT Requests</span>
-          </div>
-        </NuxtLink>
-        <NuxtLink v-if="authStore.isITAdmin" to="/admin/it/assets" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-purple-600 transition-colors" active-class="!bg-gradient-to-r !from-purple-50 !to-purple-50/40 !text-purple-700 font-semibold shadow-sm ring-1 ring-purple-100">
-          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-          <div class="flex flex-col leading-tight">
-            <span class="text-sm font-medium">รายการทรัพย์สิน</span>
-            <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">Assets</span>
-          </div>
-        </NuxtLink>
-        <NuxtLink v-if="authStore.isITAdmin" to="/admin/it/categories" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-purple-600 transition-colors" active-class="!bg-gradient-to-r !from-purple-50 !to-purple-50/40 !text-purple-700 font-semibold shadow-sm ring-1 ring-purple-100">
-          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-          <div class="flex flex-col leading-tight">
-            <span class="text-sm font-medium">หมวดหมู่อุปกรณ์</span>
-            <span class="text-[10px] opacity-60 uppercase tracking-widest mt-0.5">Categories</span>
-          </div>
-        </NuxtLink>
+        <template v-if="authStore.isITAdmin">
+          <template v-for="section in itNav" :key="section.label">
+            <div class="flex items-center gap-2 pt-5 pb-1.5 px-3 text-[11px] font-semibold uppercase text-slate-400 tracking-wider"><span class="w-1.5 h-1.5 rounded-full" :class="section.dot"></span>{{ section.label }}</div>
+            <NuxtLink
+              v-for="item in section.items"
+              :key="item.to"
+              :to="item.to"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors"
+              :class="isNavActive(item) ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold shadow-md shadow-violet-500/25' : 'text-slate-600 hover:bg-violet-50/60 hover:text-violet-800'"
+            >
+              <svg class="w-[18px] h-[18px] flex-shrink-0" :class="isNavActive(item) ? 'text-white' : section.icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" :d="item.icon" /></svg>
+              <span class="truncate">{{ item.label }}</span>
+            </NuxtLink>
+          </template>
+        </template>
       </nav>
 
       <div class="p-4 border-t border-slate-100">
@@ -128,7 +167,13 @@ const logout = async () => {
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </button>
-          <h1 class="text-lg font-bold text-slate-800 tracking-tight capitalize truncate">{{ $route.name?.toString().replace(/-/g, ' ') || 'Dashboard' }}</h1>
+          <!-- Pages can set `title` (and optional `section`) in definePageMeta; others fall back to the route name. -->
+          <div v-if="route.meta.title" class="flex items-center gap-2 min-w-0 text-sm">
+            <span v-if="route.meta.section" class="text-slate-400 truncate hidden sm:inline">{{ route.meta.section }}</span>
+            <svg v-if="route.meta.section" class="w-4 h-4 text-slate-300 flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            <h1 class="font-semibold text-slate-800 truncate">{{ route.meta.title }}</h1>
+          </div>
+          <h1 v-else class="text-lg font-bold text-slate-800 tracking-tight capitalize truncate">{{ $route.name?.toString().replace(/-/g, ' ') || 'Dashboard' }}</h1>
         </div>
         <div class="flex items-center gap-3">
           <NuxtLink to="/" class="text-sm font-medium text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded-lg">

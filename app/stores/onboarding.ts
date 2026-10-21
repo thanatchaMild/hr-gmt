@@ -8,6 +8,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const employeeType = computed(() => (hireType.value ? deriveEmployeeType(hireType.value) : null))
   const token = ref<string | null>(null)
   const employeeCode = ref<string | null>(null)
+  const editingEmployeeId = ref<number | null>(null)
 
   // 2. PDPA Consent
   const pdpaConsent = ref(false)
@@ -210,6 +211,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     pdpaConsent.value = false
     pdpaConsentDate.value = null
     pdpaSignature.value = null
+    editingEmployeeId.value = null
   }
 
   async function uploadIfFile(value: File | string | null): Promise<string | null> {
@@ -236,26 +238,46 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       militaryDocument: await uploadIfFile(documents.value.militaryDocument)
     }
 
-    await $fetch('/api/employees', {
-      method: 'POST',
-      body: {
-        token: token.value,
-        employeeCode: employeeCode.value,
-        hireType: hireType.value,
-        pdpaConsent: pdpaConsent.value,
-        pdpaConsentDate: pdpaConsentDate.value,
-        personalInfo: personalInfo.value,
-        contactInfo: contactInfo.value,
-        familyInfo: familyInfo.value,
-        educationHistory: educationHistory.value,
-        trainingHistory: trainingHistory.value,
-        workHistory: workHistory.value,
-        skillsAndOther: skillsAndOther.value,
-        sensitiveInfo: sensitiveInfo.value,
-        itRequest: itRequest.value,
-        documents: uploadedDocuments
-      }
-    })
+    if (editingEmployeeId.value) {
+      await $fetch(`/api/employees/${editingEmployeeId.value}/form-data`, {
+        method: 'PATCH',
+        body: {
+          token: token.value,
+          hireType: hireType.value,
+          personalInfo: personalInfo.value,
+          contactInfo: contactInfo.value,
+          familyInfo: familyInfo.value,
+          educationHistory: educationHistory.value,
+          trainingHistory: trainingHistory.value,
+          workHistory: workHistory.value,
+          skillsAndOther: skillsAndOther.value,
+          sensitiveInfo: sensitiveInfo.value,
+          documents: uploadedDocuments
+        }
+      })
+    } else {
+      await $fetch('/api/employees', {
+        method: 'POST',
+        body: {
+          token: token.value,
+          employeeCode: employeeCode.value,
+          hireType: hireType.value,
+          pdpaConsent: pdpaConsent.value,
+          pdpaConsentDate: pdpaConsentDate.value,
+          pdpaSignature: pdpaSignature.value,
+          personalInfo: personalInfo.value,
+          contactInfo: contactInfo.value,
+          familyInfo: familyInfo.value,
+          educationHistory: educationHistory.value,
+          trainingHistory: trainingHistory.value,
+          workHistory: workHistory.value,
+          skillsAndOther: skillsAndOther.value,
+          sensitiveInfo: sensitiveInfo.value,
+          itRequest: itRequest.value,
+          documents: uploadedDocuments
+        }
+      })
+    }
 
     return true
   }
@@ -265,6 +287,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     employeeType,
     token,
     employeeCode,
+    editingEmployeeId,
     pdpaConsent,
     pdpaConsentDate,
     pdpaSignature,

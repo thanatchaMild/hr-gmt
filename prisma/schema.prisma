@@ -107,9 +107,32 @@ model ITRequest {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employee      Employee?      @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  assetHoldings AssetHolding[]
 
   @@map("it_requests")
+}
+
+model AssetHolding {
+  id              Int       @id @default(autoincrement())
+  itRequestId     Int       @map("it_request_id")
+  employeeName    String    @map("employee_name")
+  assetName       String    @map("asset_name")
+  assetTag        String?   @map("asset_tag")
+  category        String?
+  quantity        Int       @default(1)
+  status          String    @default("ASSIGNED") // 'ASSIGNED' | 'RETURNED'
+  assignedDate    DateTime? @map("assigned_date")
+  returnedDate    DateTime? @map("returned_date")
+  returnCondition String?   @map("return_condition") // 'GOOD' | 'DAMAGED' | 'LOST'
+  notes           String?   @db.NVarChar(Max)
+  processedBy     String    @map("processed_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  itRequest ITRequest @relation(fields: [itRequestId], references: [id], onDelete: Cascade)
+
+  @@map("asset_holdings")
 }
 
 model ContractRenewal {
@@ -153,4 +176,28 @@ model Asset {
   category AssetCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@map("assets")
+}
+
+model ITAsset {
+  id                Int       @id @default(autoincrement())
+  sourceId          String    @unique @map("source_id")
+  assetTag          String    @map("asset_tag")
+  assetName         String    @map("asset_name")
+  brand             String?
+  serialNumber      String?   @map("serial_number")
+  typeName          String?   @map("type_name")
+  statusName        String?   @map("status_name")
+  assignedToName    String?   @map("assigned_to_name")
+  branchName        String?   @map("branch_name")
+  departmentName    String?   @map("department_name")
+  locationName      String?   @map("location_name")
+  purchaseDate      DateTime? @map("purchase_date")
+  warrantyEndDate   DateTime? @map("warranty_end_date")
+  price             Float?
+  syncedAt          DateTime  @default(now()) @map("synced_at")
+  syncedBy          String    @map("synced_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("it_assets")
 }
